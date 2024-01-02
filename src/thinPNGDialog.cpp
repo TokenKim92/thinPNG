@@ -1,6 +1,9 @@
 #include "thinPNGDialog.h"
 #include "ColorPalette.h"
 #include "utility.h"
+#include "shellapi.h"
+#include <filesystem>
+#include "resizeD2D.h"
 
 #ifdef _DEBUG
 #pragma comment (lib, "AppTemplateDebug.lib")
@@ -12,8 +15,8 @@ thinPNG::thinPNG() :
 	WindowDialog(L"THINPNG", L"thinPNG")
 {
 	memset(&m_viewRect, 0, sizeof(RECT));
-	m_resizeWidth = 0;
-	m_resizeHeight = 0;
+	m_resizeWidth = 500;
+	m_resizeHeight = 500;
 
 	mp_dashStrokeStyle = nullptr;
 	mp_gridFont = nullptr;
@@ -70,6 +73,11 @@ void thinPNG::OnInitDialog()
 	AddMessageHandler(WM_MOUSEMOVE, static_cast<MessageHandler>(&thinPNG::MouseMoveHandler));
 	AddMessageHandler(WM_LBUTTONDOWN, static_cast<MessageHandler>(&thinPNG::MouseLeftButtonDownHandler));
 	AddMessageHandler(WM_LBUTTONUP, static_cast<MessageHandler>(&thinPNG::MouseLeftButtonUpHandler));
+	AddMessageHandler(WM_DROPFILES, static_cast<MessageHandler>(&thinPNG::DropFilesHandler));
+
+	auto p_direct2d = new ResizeD2D(mh_window, &m_viewRect);
+	p_direct2d->Create();
+	InheritDirect2D(p_direct2d);
 }
 
 void thinPNG::OnDestroy()
@@ -151,6 +159,48 @@ int thinPNG::MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam)
 	return S_OK;
 }
 
+// to handle the WM_DROPFILES message that occurs when a window is destroyed
+int thinPNG::DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam)
+{
+	const auto h_dropInfo = reinterpret_cast<HDROP>(a_wordParam);
+	const unsigned int count = DragQueryFile(h_dropInfo, 0xFFFFFFFF, nullptr, 0);
+	wchar_t filePath[MAX_PATH] = { 0, };
+	bool existNoneImageFile = false;
+
+	for (unsigned int i = 0; i < count; i++) {
+		DragQueryFile(h_dropInfo, i, filePath, MAX_PATH);
+
+		std::filesystem::path path(filePath);
+		if (std::filesystem::is_directory(path)) {
+			// TODO:: if a directory is dropped
+			//for (auto const &directoryEntry : std::filesystem::directory_iterator(path)) {
+
+			//}
+		}
+		else {
+			if (IsImageFieExtension(path.extension().string())) {
+				static_cast<ResizeD2D *>(mp_direct2d)->ResizeImage(
+					path.wstring(), m_resizeWidth, m_resizeHeight
+				);
+			}
+			else {
+				existNoneImageFile = true;
+			}
+		}
+	}
+
+	if (existNoneImageFile) {
+		MessageBox(
+			mh_window,
+			L"Files which are not in PNG or JPEG format are ignored.",
+			L"Invalid file format warning",
+			MB_OK | MB_ICONWARNING
+		);
+	}
+
+	return S_OK;
+}
+
 void thinPNG::DrawField()
 {
 	mp_direct2d->SetBrushColor(m_textColor);
@@ -159,7 +209,6 @@ void thinPNG::DrawField()
 	mp_direct2d->DrawRoundedRectangle(m_gridRect, 10.0f);
 	mp_direct2d->SetStrokeStyle(prevStrokeStyle);
 
-	
 	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_gridFont);
 	mp_direct2d->DrawUserText(L"Drop your PNG or JPEF files here!", m_gridRect);
 	mp_direct2d->SetTextFormat(prevTextFormat);
@@ -179,7 +228,6 @@ void thinPNG::DrawOptionButton()
 	mp_direct2d->FillRoundedRectangle(m_optionButtonRect, 5.0f);
 	mp_direct2d->SetBrushColor(m_optionButtonBorderColor);
 	mp_direct2d->DrawRoundedRectangle(m_optionButtonRect, 5.0f);
-
 
 	mp_direct2d->SetBrushColor(m_textColor);
 	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_optionFont);

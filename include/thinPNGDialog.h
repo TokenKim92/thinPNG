@@ -38,10 +38,12 @@ protected:
 
 	// to handle the WM_MOUSEMOVE message that occurs when a window is destroyed
 	int MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_LBUTTONDOWN  message that occurs when a window is destroyed
+	// to handle the WM_LBUTTONDOWN message that occurs when a window is destroyed
 	int MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_LBUTTONUP  message that occurs when a window is destroyed
+	// to handle the WM_LBUTTONUP message that occurs when a window is destroyed
 	int MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam);
+	// to handle the WM_DROPFILES message that occurs when a window is destroyed
+	int DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam);
 };
 
 #endif //_THIN_PNG_DIALOG_H_
