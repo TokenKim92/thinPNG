@@ -1,0 +1,11 @@
+# resource
+
+# Visual Studio
+.vs/
+*.aps
+
+# build
+x64/
+x86/
+Debug/
+Release/
