@@ -137,6 +137,7 @@
   <ItemGroup>
     <ClCompile Include="src\thinPNG.cpp" />
     <ClCompile Include="src\thinPNGDialog.cpp" />
+    <ClCompile Include="src\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ApplicationCore.h" />
@@ -146,6 +147,7 @@
     <ClInclude Include="include\framework.h" />
     <ClInclude Include="include\Resource.h" />
     <ClInclude Include="include\targetver.h" />
+    <ClInclude Include="include\utility.h" />
     <ClInclude Include="include\WindowDialog.h" />
     <ClInclude Include="include\thinPNGDialog.h" />
   </ItemGroup>
