@@ -34,6 +34,7 @@ protected:
 
     Direct2DEx *mp_direct2d;
     THEME_MODE m_themeMode;
+    unsigned long m_style;
     unsigned long m_extendStyle;
 
 public:
@@ -50,6 +51,8 @@ public:
     int Run();
 
     int Create(int a_width = CW_USEDEFAULT, int a_height = 0, int a_x = CW_USEDEFAULT, int a_y = 0);
+    int DoModal(HWND ah_parentWindow, int a_width = CW_USEDEFAULT, int a_height = 0, int a_x = CW_USEDEFAULT, int a_y = 0);
+    void SetStyle(const unsigned long a_tyle);
     void SetExtendStyle(const unsigned long a_extendStyle);
     int SetThemeMode(const THEME_MODE a_mode);
     void InheritDirect2D(Direct2DEx *const ap_direct2d);

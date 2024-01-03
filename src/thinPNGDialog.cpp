@@ -16,7 +16,7 @@ thinPNG::thinPNG() :
 {
 	memset(&m_viewRect, 0, sizeof(RECT));
 	m_size = 800;
-	m_selectedRadioType = OptionDialog::CONTROL_TYPE::HEIGHT_RADIO;
+	m_selectedRatioType = OptionDialog::CONTROL_TYPE::WIDTH_RADIO;
 
 	mp_dashStrokeStyle = nullptr;
 	mp_gridFont = nullptr;
@@ -29,7 +29,6 @@ thinPNG::thinPNG() :
 	m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_50);
 
 	m_hoverOnOptionButton = false;
-	m_clickedOnOptionButton = false;
 }
 
 thinPNG::~thinPNG()
@@ -72,7 +71,6 @@ void thinPNG::OnInitDialog()
 	// add message handlers
 	AddMessageHandler(WM_MOUSEMOVE, static_cast<MessageHandler>(&thinPNG::MouseMoveHandler));
 	AddMessageHandler(WM_LBUTTONDOWN, static_cast<MessageHandler>(&thinPNG::MouseLeftButtonDownHandler));
-	AddMessageHandler(WM_LBUTTONUP, static_cast<MessageHandler>(&thinPNG::MouseLeftButtonUpHandler));
 	AddMessageHandler(WM_DROPFILES, static_cast<MessageHandler>(&thinPNG::DropFilesHandler));
 
 	auto p_direct2d = new ResizeD2D(mh_window, &m_viewRect);
@@ -141,23 +139,21 @@ int thinPNG::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
 	const POINT pos = { LOWORD(a_longParam), HIWORD(a_longParam) };
 
 	if (PointInRectF(m_optionButtonRect, pos)) {
-		m_clickedOnOptionButton = true;
+		RECT rect;
+		::GetWindowRect(mh_window, &rect);
 
-		OptionDialog instanceDialog(m_size, m_selectedRadioType);
-		instanceDialog.Create(450, 330, 200, 200);
+		const int centerPosX = rect.left +(rect.right - rect.left) / 2;
+		const int centerPosY = rect.top + (rect.bottom - rect.top) / 2;
+		const int width = 450;
+		const int height = 300;
 
-		::InvalidateRect(mh_window, &m_viewRect, false);
-	}
+		OptionDialog instanceDialog(m_size, m_selectedRatioType);
+		instanceDialog.SetStyle(WS_POPUP | WS_VISIBLE);
+		instanceDialog.SetExtendStyle(WS_EX_TOPMOST);
+		instanceDialog.DoModal(mh_window, width, height, centerPosX - width / 2, centerPosY - height / 2);
 
-	return S_OK;
-}
-
-// to handle the WM_LBUTTONUP  message that occurs when a window is destroyed
-int thinPNG::MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{
-	if (m_clickedOnOptionButton) {
-		m_clickedOnOptionButton = false;
-		::InvalidateRect(mh_window, &m_viewRect, false);
+		m_size = instanceDialog.GetSize();
+		m_selectedRatioType = instanceDialog.GetRatioType();
 	}
 
 	return S_OK;
@@ -184,7 +180,7 @@ int thinPNG::DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam)
 		else {
 			if (IsImageFieExtension(path.extension().string())) {
 				static_cast<ResizeD2D *>(mp_direct2d)->ResizeImage(
-					path.wstring(), m_size, m_selectedRadioType
+					path.wstring(), m_size, m_selectedRatioType
 				);
 			}
 			else {
@@ -221,9 +217,6 @@ void thinPNG::DrawField()
 void thinPNG::DrawOptionButton()
 {
 	float transparency = m_hoverOnOptionButton ? 1.0f : 0.7f;
-	if (m_clickedOnOptionButton) {
-		transparency = 0.9f;
-	}
 
 	m_saveButtonColor.a = transparency;
 	m_buttonBorderColor.a = transparency;

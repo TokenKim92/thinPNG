@@ -11,7 +11,9 @@
 OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRadioType) :
 	WindowDialog(L"OPTIONDILAOG", L"optionDialog"),
 	m_size(a_size),
+	m_tempSize(a_size),
 	m_selectedRadioType(a_selectedRadioType),
+	m_tempSelectedRadioType(a_selectedRadioType),
 	m_subtitleFontSize(13.0f),
 	m_defaultTransparency(0.7f)
 {
@@ -277,7 +279,10 @@ void OptionDialog::OnControlDown(const CONTROL_TYPE &a_buttonType)
 void OptionDialog::OnButtonControlUp(const CONTROL_TYPE &a_buttonType)
 {
 	if (a_buttonType == m_hoverArea) {
-		// TODO:: Set adjusted width or height
+		if (CONTROL_TYPE::SAVE_BUTTON == a_buttonType) {
+			m_size = m_tempSize;
+			m_selectedRadioType = m_tempSelectedRadioType;
+		}
 		::DestroyWindow(mh_window);
 	}
 	else {
@@ -293,8 +298,8 @@ void OptionDialog::OnRadioControlUp(const CONTROL_TYPE &a_buttonType)
 	}
 
 	if (a_buttonType == m_hoverArea) {
-		if (a_buttonType != m_selectedRadioType) {
-			m_selectedRadioType = a_buttonType;
+		if (a_buttonType != m_tempSelectedRadioType) {
+			m_tempSelectedRadioType = a_buttonType;
 			::InvalidateRect(mh_window, &m_viewRect, false);
 		}
 	}
@@ -328,7 +333,7 @@ void OptionDialog::DrawRadioButton(const std::wstring &a_title, const DRect &a_r
 	mp_direct2d->SetBrushColor(color);
 	mp_direct2d->FillEllipse(rect);
 
-	if (a_type == m_selectedRadioType) {
+	if (a_type == m_tempSelectedRadioType) {
 		const float strokeWidth = isHover ? 3.0f : 5.0f;
 		mp_direct2d->SetStrokeWidth(strokeWidth);
 		mp_direct2d->SetBrushColor(m_saveButtonColor);
@@ -376,7 +381,7 @@ void OptionDialog::DrawSizeEdit()
 	const float margin = 10.0f;
 	rect.left += margin;
 	rect.right -= margin;
-	DrawUserText(std::to_wstring(m_size), rect, mp_textFont);
+	DrawUserText(std::to_wstring(m_tempSize), rect, mp_textFont);
 }
 
 void OptionDialog::DrawSaveButton()
@@ -401,4 +406,14 @@ void OptionDialog::DrawCancelButton()
 	mp_direct2d->SetBrushColor(buttonColor);
 	mp_direct2d->FillRoundedRectangle(m_cancelButtonRect, 5.0f);
 	DrawUserText(L"Cancel", m_cancelButtonRect, mp_buttonFont);
+}
+
+unsigned int OptionDialog::GetSize()
+{
+	return m_size;
+}
+
+OptionDialog::CONTROL_TYPE OptionDialog::GetRatioType()
+{
+	return m_selectedRadioType;
 }

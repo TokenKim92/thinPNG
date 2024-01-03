@@ -9,7 +9,7 @@ class thinPNG : public WindowDialog
 protected:
 	RECT m_viewRect;
 	unsigned int m_size;
-	OptionDialog::CONTROL_TYPE m_selectedRadioType;
+	OptionDialog::CONTROL_TYPE m_selectedRatioType;
 
 	ID2D1StrokeStyle *mp_dashStrokeStyle;
 	IDWriteTextFormat *mp_gridFont;
@@ -22,7 +22,6 @@ protected:
 	DColor m_buttonBorderColor;
 
 	bool m_hoverOnOptionButton;
-	bool m_clickedOnOptionButton;
 
 public:
 	thinPNG();
@@ -41,8 +40,6 @@ protected:
 	int MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam);
 	// to handle the WM_LBUTTONDOWN message that occurs when a window is destroyed
 	int MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_LBUTTONUP message that occurs when a window is destroyed
-	int MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam);
 	// to handle the WM_DROPFILES message that occurs when a window is destroyed
 	int DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam);
 };

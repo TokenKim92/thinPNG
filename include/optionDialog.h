@@ -18,7 +18,9 @@ public:
 protected:
 	RECT m_viewRect;
 	unsigned int m_size;
+	unsigned int m_tempSize;
 	CONTROL_TYPE m_selectedRadioType;
+	CONTROL_TYPE m_tempSelectedRadioType;
 
 	IDWriteTextFormat *mp_titleFont;
 	IDWriteTextFormat *mp_subtitleFont;
@@ -53,6 +55,9 @@ protected:
 public:
 	OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRadioType);
 	virtual ~OptionDialog();
+
+	unsigned int GetSize();
+	CONTROL_TYPE GetRatioType();
 
 protected:
 	virtual void OnInitDialog() override;
