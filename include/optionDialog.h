@@ -36,6 +36,7 @@ protected:
 	DRect m_buttonBackgroundRect;
 	DRect m_saveButtonRect;
 	DRect m_cancelButtonRect;
+	DRect m_warningRect;
 
 	DColor m_textColor;
 	DColor m_sizeEditColor;
@@ -71,10 +72,13 @@ protected:
 	int MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
 	// to handle the WM_LBUTTONUP message that occurs when a window is destroyed
 	int MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam);
+	// to handle the WM_KEYDOWN message that occurs when a window is destroyed
+	int KeyDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
 
 private:
 	void InitRects();
 
+	void OnNumberKeyDown(const unsigned char a_pressedKey, const unsigned char a_offset);
 	void OnControlDown(const CONTROL_TYPE &a_buttonType);
 	void OnButtonControlUp(const CONTROL_TYPE &a_buttonType);
 	void OnRadioControlUp(const CONTROL_TYPE &a_buttonType);

@@ -93,7 +93,7 @@ void ResizeD2D::SaveBitmapToFile(const std::wstring &a_filePath, IWICFormatConve
     }
     // adjust file name
     auto fileName = filePath.stem().wstring();
-    std::wstring adjustedFileName = fileName + L"-resize" + filePath.extension().wstring();
+    std::wstring adjustedFileName = filePath.parent_path().wstring() + L"\\" + L"resize-" + fileName + filePath.extension().wstring();
     p_stream->InitializeFromFilename(adjustedFileName.c_str(), GENERIC_WRITE);
 
     IWICBitmapEncoder *p_encoder;

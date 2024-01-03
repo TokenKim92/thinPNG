@@ -32,12 +32,13 @@ OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRa
 	memset(&m_buttonBackgroundRect, 0, sizeof(DRect));
 	memset(&m_saveButtonRect, 0, sizeof(DRect));
 	memset(&m_cancelButtonRect, 0, sizeof(DRect));
+	memset(&m_warningRect, 0, sizeof(DRect));
 
 	m_textColor = RGB_TO_COLORF(NEUTRAL_100);
 	m_sizeEditColor = RGB_TO_COLORF(NEUTRAL_700);
 	m_sizeShadowColor = RGB_TO_COLORF(NEUTRAL_500);
 	m_clieckedSizeEditColor = RGB_TO_COLORF(NEUTRAL_900);
-	m_clieckedSizeShadowColor = RGB_TO_COLORF(SKY_400);
+	m_clieckedSizeShadowColor = RGB_TO_COLORF(SKY_500);
 	m_saveButtonColor = RGB_TO_COLORF(SKY_400);
 	m_cancelButtonColor = RGB_TO_COLORF(NEUTRAL_800);
 
@@ -114,6 +115,12 @@ void OptionDialog::InitRects()
 	m_cancelButtonRect.right = m_viewRect.right - margin;
 	m_cancelButtonRect.bottom = m_viewRect.bottom - margin;
 	m_cancelButtonRect.top = m_cancelButtonRect.bottom - buttonHeight;
+
+	// warning rect
+	m_warningRect.left = margin * 2.0f;
+	m_warningRect.right = m_viewRect.right - margin * 2.0f;
+	m_warningRect.top = m_sizeEditRect.bottom;
+	m_warningRect.bottom = m_buttonBackgroundRect.top;
 }
 
 void OptionDialog::OnInitDialog()
@@ -149,6 +156,7 @@ void OptionDialog::OnInitDialog()
 	AddMessageHandler(WM_MOUSEMOVE, static_cast<MessageHandler>(&OptionDialog::MouseMoveHandler));
 	AddMessageHandler(WM_LBUTTONDOWN, static_cast<MessageHandler>(&OptionDialog::MouseLeftButtonDownHandler));
 	AddMessageHandler(WM_LBUTTONUP, static_cast<MessageHandler>(&OptionDialog::MouseLeftButtonUpHandler));
+	AddMessageHandler(WM_KEYDOWN, static_cast<MessageHandler>(&OptionDialog::KeyDownHandler));
 }
 
 void OptionDialog::OnDestroy()
@@ -179,6 +187,14 @@ void OptionDialog::OnPaint()
 	mp_direct2d->FillRectangle(m_buttonBackgroundRect);
 	DrawSaveButton();
 	DrawCancelButton();
+
+	// draw warning section if the size is 0
+	if (0 == m_tempSize) {
+		auto prevTextFormat = mp_direct2d->SetTextFormat(mp_textFont);
+		mp_direct2d->SetBrushColor(RGB_TO_COLORF(RED_300));
+		mp_direct2d->DrawUserText(L"(!) Invalid number value.", m_warningRect);
+		mp_direct2d->SetTextFormat(prevTextFormat);
+	}
 }
 
 void OptionDialog::OnSetThemeMode()
@@ -268,6 +284,49 @@ int OptionDialog::MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longPara
 	return S_OK;
 }
 
+// to handle the WM_KEYDOWN message that occurs when a window is destroyed
+int OptionDialog::KeyDownHandler(WPARAM a_wordParam, LPARAM a_longParam) 
+{
+	static const unsigned char number0 = 0x30;
+	static const unsigned char number9 = 0x39;
+
+	if (CONTROL_TYPE::SIZE_EDIT != m_clickedArea) {
+		return S_OK;
+	}
+
+	const unsigned char pressedKey = static_cast<unsigned char>(a_wordParam);
+
+	if (number0 <= pressedKey && pressedKey <= number9) {
+		OnNumberKeyDown(pressedKey, number0);
+	}
+	else if ((VK_NUMPAD0 <= pressedKey && pressedKey <= VK_NUMPAD9)) {
+		OnNumberKeyDown(pressedKey, VK_NUMPAD0);
+	}
+	else if (VK_BACK == pressedKey) {
+		if (0 != m_tempSize) {
+			std::string numberText = std::to_string(m_tempSize);
+			numberText.pop_back();
+			m_tempSize = numberText.empty() ? 0 : std::stoi(numberText);
+
+			::InvalidateRect(mh_window, &m_viewRect, false);
+		}
+	}
+
+	return S_OK;
+}
+
+void OptionDialog::OnNumberKeyDown(const unsigned char a_pressedKey, const unsigned char a_offset)
+{
+	std::string previousNumber = std::to_string(m_tempSize);
+
+	if (previousNumber.length() < 6) {
+		std::string currentNumber = std::to_string(m_tempSize) + std::to_string(a_pressedKey - a_offset);
+		m_tempSize = std::stoi(currentNumber);
+
+		::InvalidateRect(mh_window, &m_viewRect, false);
+	}
+}
+
 void OptionDialog::OnControlDown(const CONTROL_TYPE &a_buttonType)
 {
 	if (a_buttonType != m_clickedArea) {
@@ -279,11 +338,18 @@ void OptionDialog::OnControlDown(const CONTROL_TYPE &a_buttonType)
 void OptionDialog::OnButtonControlUp(const CONTROL_TYPE &a_buttonType)
 {
 	if (a_buttonType == m_hoverArea) {
-		if (CONTROL_TYPE::SAVE_BUTTON == a_buttonType) {
+		// on click cancel button
+		if (CONTROL_TYPE::CANCEL_BUTTON == a_buttonType) {
+			::DestroyWindow(mh_window);
+			return;
+		}
+		
+		// on click save button
+		if (0 != m_tempSize) {
 			m_size = m_tempSize;
 			m_selectedRadioType = m_tempSelectedRadioType;
-		}
-		::DestroyWindow(mh_window);
+			::DestroyWindow(mh_window);
+		}		
 	}
 	else {
 		m_clickedArea = CONTROL_TYPE::NONE;
@@ -386,9 +452,15 @@ void OptionDialog::DrawSizeEdit()
 
 void OptionDialog::DrawSaveButton()
 {
-	DColor buttonColor = m_saveButtonColor;
-	if (CONTROL_TYPE::SAVE_BUTTON == m_hoverArea && CONTROL_TYPE::SAVE_BUTTON != m_clickedArea) {
-		buttonColor.a = 1.0f;
+	DColor buttonColor;
+	if (0 == m_tempSize) {
+		buttonColor = m_cancelButtonColor;
+	}
+	else {
+		buttonColor = m_saveButtonColor;
+		if (CONTROL_TYPE::SAVE_BUTTON == m_hoverArea && CONTROL_TYPE::SAVE_BUTTON != m_clickedArea) {
+			buttonColor.a = 1.0f;
+		}
 	}
 
 	mp_direct2d->SetBrushColor(buttonColor);
