@@ -2,13 +2,14 @@
 #define _THIN_PNG_DIALOG_H_
 
 #include "WindowDialog.h"
+#include "optionDialog.h"
 
 class thinPNG : public WindowDialog
 {
 protected:
 	RECT m_viewRect;
-	unsigned int m_resizeWidth;
-	unsigned int m_resizeHeight;
+	unsigned int m_size;
+	OptionDialog::CONTROL_TYPE m_selectedRadioType;
 
 	ID2D1StrokeStyle *mp_dashStrokeStyle;
 	IDWriteTextFormat *mp_gridFont;

@@ -5,36 +5,53 @@
 
 class OptionDialog : public WindowDialog
 {
+public:
+	enum CONTROL_TYPE {
+		NONE = 0,
+		WIDTH_RADIO,
+		HEIGHT_RADIO,
+		SIZE_EDIT,
+		SAVE_BUTTON,
+		CANCEL_BUTTON
+	};
+
 protected:
 	RECT m_viewRect;
-	unsigned int &m_width;
-	unsigned int &m_height;
+	unsigned int m_size;
+	CONTROL_TYPE m_selectedRadioType;
 
 	IDWriteTextFormat *mp_titleFont;
 	IDWriteTextFormat *mp_subtitleFont;
 	IDWriteTextFormat *mp_textFont;
 	IDWriteTextFormat *mp_buttonFont;
-	const float m_subtitleFontSize = 13.0f;
+	const float m_subtitleFontSize;
 
 	DRect m_titleRect;
 	DRect m_ratioTitleRect;
-	DRect m_ratioWidthRect;
-	DRect m_ratioHeightRect;
-	DRect m_widthRect;
-	DRect m_heightRect;
+	DRect m_radioWidthRect;
+	DRect m_radioHeightRect;
+	DRect m_sizeEditRect;
 	DRect m_buttonBackgroundRect;
 	DRect m_saveButtonRect;
 	DRect m_cancelButtonRect;
 
 	DColor m_textColor;
+	DColor m_sizeEditColor;
+	DColor m_sizeShadowColor;
+	DColor m_clieckedSizeEditColor;
+	DColor m_clieckedSizeShadowColor;
 	DColor m_saveButtonColor;
 	DColor m_cancelButtonColor;
+	const float m_defaultTransparency;
 
 	bool m_hoverOnButton;
 	bool m_clickedOnButton;
+	CONTROL_TYPE m_hoverArea;
+	CONTROL_TYPE m_clickedArea;
+	std::map<CONTROL_TYPE, DRect> m_controlTable;
 
 public:
-	OptionDialog(unsigned int &a_width, unsigned int &a_height);
+	OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRadioType);
 	virtual ~OptionDialog();
 
 protected:
@@ -53,11 +70,15 @@ protected:
 private:
 	void InitRects();
 
-	void DrawTitle();
-	void DrawRatioSelector();
-	void DrawRadioButton(const std::wstring &a_title, const bool isClicked, const DRect &a_rect);
-	void DrawEditControl(const std::wstring &a_title, const unsigned int a_value, const DRect &a_rect);
-	void DrawSaveAndCancelButton();
+	void OnControlDown(const CONTROL_TYPE &a_buttonType);
+	void OnButtonControlUp(const CONTROL_TYPE &a_buttonType);
+	void OnRadioControlUp(const CONTROL_TYPE &a_buttonType);
+
+	void DrawUserText(const std::wstring &a_text, const DRect &a_rect, IDWriteTextFormat * const ap_textFormat);
+	void DrawRadioButton(const std::wstring &a_title, const DRect &a_rect, const CONTROL_TYPE &a_type);
+	void DrawSizeEdit();
+	void DrawSaveButton();
+	void DrawCancelButton();
 };
 
 #endif //_OPTION_DIALOG_H_

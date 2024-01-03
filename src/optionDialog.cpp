@@ -1,5 +1,6 @@
 #include "optionDialog.h"
 #include "ColorPalette.h"
+#include "utility.h"
 
 #ifdef _DEBUG
 #pragma comment (lib, "AppTemplateDebug.lib")
@@ -7,10 +8,12 @@
 #pragma comment (lib, "AppTemplate.lib")     
 #endif
 
-OptionDialog::OptionDialog(unsigned int &a_width, unsigned int &a_height) :
+OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRadioType) :
 	WindowDialog(L"OPTIONDILAOG", L"optionDialog"),
-	m_width(a_width),
-	m_height(a_height)
+	m_size(a_size),
+	m_selectedRadioType(a_selectedRadioType),
+	m_subtitleFontSize(13.0f),
+	m_defaultTransparency(0.7f)
 {
 	memset(&m_viewRect, 0, sizeof(RECT));
 	
@@ -21,25 +24,94 @@ OptionDialog::OptionDialog(unsigned int &a_width, unsigned int &a_height) :
 
 	memset(&m_titleRect, 0, sizeof(DRect));
 	memset(&m_ratioTitleRect, 0, sizeof(DRect));
-	memset(&m_ratioWidthRect, 0, sizeof(DRect));
-	memset(&m_ratioHeightRect, 0, sizeof(DRect));
-	memset(&m_widthRect, 0, sizeof(DRect));
-	memset(&m_heightRect, 0, sizeof(DRect));
+	memset(&m_radioWidthRect, 0, sizeof(DRect));
+	memset(&m_radioHeightRect, 0, sizeof(DRect));
+	memset(&m_sizeEditRect, 0, sizeof(DRect));
 	memset(&m_buttonBackgroundRect, 0, sizeof(DRect));
 	memset(&m_saveButtonRect, 0, sizeof(DRect));
 	memset(&m_cancelButtonRect, 0, sizeof(DRect));
 
 	m_textColor = RGB_TO_COLORF(NEUTRAL_100);
+	m_sizeEditColor = RGB_TO_COLORF(NEUTRAL_700);
+	m_sizeShadowColor = RGB_TO_COLORF(NEUTRAL_500);
+	m_clieckedSizeEditColor = RGB_TO_COLORF(NEUTRAL_900);
+	m_clieckedSizeShadowColor = RGB_TO_COLORF(SKY_400);
 	m_saveButtonColor = RGB_TO_COLORF(SKY_400);
 	m_cancelButtonColor = RGB_TO_COLORF(NEUTRAL_800);
+
+	m_saveButtonColor.a = m_defaultTransparency;
+	m_cancelButtonColor.a = m_defaultTransparency;
+	m_sizeEditColor.a = m_defaultTransparency;
+	m_sizeShadowColor.a = m_defaultTransparency;
+	m_clieckedSizeEditColor.a = m_defaultTransparency;;
+	m_clieckedSizeShadowColor.a = m_defaultTransparency;;
 	
 	m_hoverOnButton = false;
 	m_clickedOnButton = false;
+	m_hoverArea = CONTROL_TYPE::NONE;
+	m_clickedArea = CONTROL_TYPE::NONE;
 }
 
 OptionDialog::~OptionDialog()
 {
 
+}
+
+void OptionDialog::InitRects()
+{
+	::GetClientRect(mh_window, &m_viewRect);
+
+	const float margin = 20.0f;
+	const POINT centerPos{ m_viewRect.right / 2, m_viewRect.bottom / 2 };
+
+	// title rect
+	m_titleRect.left = centerPos.x - 40.0f;
+	m_titleRect.top = margin;
+	m_titleRect.right = centerPos.x + 40.0f;
+	m_titleRect.bottom = m_titleRect.top + 20.0f;
+
+	// ratio title rect
+	m_ratioTitleRect.left = margin * 2.0f;
+	m_ratioTitleRect.right = m_viewRect.right - margin * 2.0f;
+	m_ratioTitleRect.top = m_titleRect.bottom + margin;
+	m_ratioTitleRect.bottom = m_ratioTitleRect.top + 20.0f;
+
+	const float radioButtonWidth = 100.0f;
+	const float radioButtonHeight = 30.0f;
+	// ratio width rect
+	m_radioWidthRect.left = margin * 2.0f;
+	m_radioWidthRect.right = m_radioWidthRect.left + radioButtonWidth;
+	m_radioWidthRect.top = m_ratioTitleRect.bottom;
+	m_radioWidthRect.bottom = m_radioWidthRect.top + radioButtonHeight;
+	// ratio height rect
+	m_radioHeightRect.left = centerPos.x + margin;
+	m_radioHeightRect.right = m_radioHeightRect.left + radioButtonWidth;
+	m_radioHeightRect.top = m_ratioTitleRect.bottom;
+	m_radioHeightRect.bottom = m_radioHeightRect.top + radioButtonHeight;
+
+	// width edit rect
+	m_sizeEditRect.left = margin * 2.0f;
+	m_sizeEditRect.right = centerPos.x - margin;
+	m_sizeEditRect.top = m_radioWidthRect.bottom + margin;
+	m_sizeEditRect.bottom = m_sizeEditRect.top + 50.0f;
+
+	const float buttonHeight = 35.0f;
+	// buttons background rect
+	m_buttonBackgroundRect.left = 0.0f;
+	m_buttonBackgroundRect.top = m_viewRect.bottom - buttonHeight - margin * 2.0f;
+	m_buttonBackgroundRect.right = static_cast<float>(m_viewRect.right);
+	m_buttonBackgroundRect.bottom = static_cast<float>(m_viewRect.bottom);
+
+	// save button rect
+	m_saveButtonRect.left = margin;
+	m_saveButtonRect.right = centerPos.x - margin / 2.0f;
+	m_saveButtonRect.bottom = m_viewRect.bottom - margin;
+	m_saveButtonRect.top = m_saveButtonRect.bottom - buttonHeight;
+	// cancel button rect
+	m_cancelButtonRect.left = centerPos.x + margin / 2.0f;
+	m_cancelButtonRect.right = m_viewRect.right - margin;
+	m_cancelButtonRect.bottom = m_viewRect.bottom - margin;
+	m_cancelButtonRect.top = m_cancelButtonRect.bottom - buttonHeight;
 }
 
 void OptionDialog::OnInitDialog()
@@ -49,6 +121,13 @@ void OptionDialog::OnInitDialog()
 	DisableSize();
 
 	InitRects();
+	m_controlTable = {
+		{CONTROL_TYPE::WIDTH_RADIO, m_radioWidthRect},
+		{CONTROL_TYPE::HEIGHT_RADIO, m_radioHeightRect},
+		{CONTROL_TYPE::SIZE_EDIT, m_sizeEditRect},
+		{CONTROL_TYPE::SAVE_BUTTON, m_saveButtonRect},
+		{CONTROL_TYPE::CANCEL_BUTTON, m_cancelButtonRect},
+	};
 
 	// create title font
 	mp_titleFont = mp_direct2d->CreateTextFormat(DEFAULT_FONT_NAME, 20.0f, DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL);
@@ -82,14 +161,22 @@ void OptionDialog::OnPaint()
 {
 	mp_direct2d->Clear();
 
-	DrawTitle();
+	// draw title section
+	DrawUserText(L"Resize", m_titleRect, mp_titleFont);
 
-	DrawRatioSelector();
-	
-	DrawEditControl(L"Width (px)", m_width, m_widthRect);
-	DrawEditControl(L"Height (px)",m_height, m_heightRect);
+	// draw radio button section
+	DrawUserText(L"Lock aspect ratio per:", m_ratioTitleRect, mp_subtitleFont);
+	DrawRadioButton(L"Width", m_radioWidthRect, CONTROL_TYPE::WIDTH_RADIO);
+	DrawRadioButton(L"Height", m_radioHeightRect, CONTROL_TYPE::HEIGHT_RADIO);
 
-	DrawSaveAndCancelButton();
+	// draw size edit section
+	DrawSizeEdit();
+
+	// draw save and cencel button saection
+	mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_900));
+	mp_direct2d->FillRectangle(m_buttonBackgroundRect);
+	DrawSaveButton();
+	DrawCancelButton();
 }
 
 void OptionDialog::OnSetThemeMode()
@@ -107,6 +194,23 @@ void OptionDialog::OnSetThemeMode()
 int OptionDialog::MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam)
 {
 	const POINT pos = { LOWORD(a_longParam), HIWORD(a_longParam) };
+
+	for (auto const &[type, rect] : m_controlTable) {
+		if (PointInRectF(rect, pos)) {
+			if (type != m_hoverArea) {
+				m_hoverArea = type;
+				::InvalidateRect(mh_window, &m_viewRect, true);
+			}
+
+			return S_OK;
+		}
+	}
+
+	if (CONTROL_TYPE::NONE != m_hoverArea) {
+		m_hoverArea = CONTROL_TYPE::NONE;
+		::InvalidateRect(mh_window, &m_viewRect, false);
+	}
+
 	return S_OK;
 }
 
@@ -114,176 +218,187 @@ int OptionDialog::MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam)
 int OptionDialog::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
 {
 	const POINT pos = { LOWORD(a_longParam), HIWORD(a_longParam) };
+	
+	for (auto const &[type, rect] : m_controlTable) {
+		if (PointInRectF(rect, pos)) {
+			::SetCapture(mh_window);
+			m_clickedArea = type;
+			::InvalidateRect(mh_window, &m_viewRect, false);
+			return S_OK;
+		}
+	}
+
+	if (CONTROL_TYPE::NONE != m_clickedArea) {
+		m_clickedArea = CONTROL_TYPE::NONE;
+		::InvalidateRect(mh_window, &m_viewRect, false);
+	}
 
 	return S_OK;
 }
 
 // to handle the WM_LBUTTONUP  message that occurs when a window is destroyed
 int OptionDialog::MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{
+{	
+	if (CONTROL_TYPE::NONE != m_clickedArea) {
+		::ReleaseCapture();
+
+		switch (m_clickedArea)
+		{
+		case CONTROL_TYPE::WIDTH_RADIO:
+			OnRadioControlUp(CONTROL_TYPE::WIDTH_RADIO);
+			break;
+		case CONTROL_TYPE::HEIGHT_RADIO:
+			OnRadioControlUp(CONTROL_TYPE::HEIGHT_RADIO);
+			break;
+		case CONTROL_TYPE::SIZE_EDIT:
+			break;
+		case CONTROL_TYPE::SAVE_BUTTON:
+			OnButtonControlUp(CONTROL_TYPE::SAVE_BUTTON);
+			break;
+		case CONTROL_TYPE::CANCEL_BUTTON:
+			OnButtonControlUp(CONTROL_TYPE::CANCEL_BUTTON);
+			break;
+		default:
+			break;
+		}
+	}
 
 	return S_OK;
 }
 
-void OptionDialog::InitRects()
+void OptionDialog::OnControlDown(const CONTROL_TYPE &a_buttonType)
 {
-	::GetClientRect(mh_window, &m_viewRect);
-
-	const float margin = 20.0f;
-	const POINT centerPos{ m_viewRect.right / 2, m_viewRect.bottom / 2 };
-
-	// title rect
-	m_titleRect.left = centerPos.x - 40.0f;
-	m_titleRect.top = margin;
-	m_titleRect.right = centerPos.x + 40.0f;
-	m_titleRect.bottom = m_titleRect.top + 20.0f;
-
-	// ratio title rect
-	m_ratioTitleRect.left = margin * 2.0f;
-	m_ratioTitleRect.right = m_viewRect.right - margin * 2.0f;
-	m_ratioTitleRect.top = m_titleRect.bottom + margin;
-	m_ratioTitleRect.bottom = m_ratioTitleRect.top + 20.0f;
-
-	const float radioButtonHeight = 30.0f;
-	// ratio width rect
-	m_ratioWidthRect.left = margin * 2.0f;
-	m_ratioWidthRect.right = centerPos.x - margin;
-	m_ratioWidthRect.top = m_ratioTitleRect.bottom;
-	m_ratioWidthRect.bottom = m_ratioWidthRect.top + radioButtonHeight;
-	// ratio height rect
-	m_ratioHeightRect.left = centerPos.x + margin;
-	m_ratioHeightRect.right = m_viewRect.right - margin * 2.0f;
-	m_ratioHeightRect.top = m_ratioTitleRect.bottom;
-	m_ratioHeightRect.bottom = m_ratioHeightRect.top + radioButtonHeight;
-
-	const float editControlHeight = 50.0f;
-	// width edit rect
-	m_widthRect.left = margin * 2.0f;
-	m_widthRect.right = centerPos.x - margin;
-	m_widthRect.top = m_ratioWidthRect.bottom + margin;
-	m_widthRect.bottom = m_widthRect.top + editControlHeight;
-	// height edit rect
-	m_heightRect.left = centerPos.x + margin;
-	m_heightRect.right = m_viewRect.right - margin * 2.0f;
-	m_heightRect.top = m_ratioWidthRect.bottom + margin;
-	m_heightRect.bottom = m_heightRect.top + editControlHeight;
-
-	const float buttonHeight = 35.0f;
-	// buttons background rect
-	m_buttonBackgroundRect.left = 0.0f;
-	m_buttonBackgroundRect.top = m_viewRect.bottom - buttonHeight - margin * 2.0f;
-	m_buttonBackgroundRect.right = static_cast<float>(m_viewRect.right);
-	m_buttonBackgroundRect.bottom = static_cast<float>(m_viewRect.bottom);
-
-	// save button rect
-	m_saveButtonRect.left = margin;
-	m_saveButtonRect.right = centerPos.x - margin / 2.0f;
-	m_saveButtonRect.bottom = m_viewRect.bottom - margin;
-	m_saveButtonRect.top = m_saveButtonRect.bottom - buttonHeight;
-	// cancel button rect
-	m_cancelButtonRect.left = centerPos.x + margin / 2.0f;
-	m_cancelButtonRect.right = m_viewRect.right - margin;
-	m_cancelButtonRect.bottom = m_viewRect.bottom - margin;
-	m_cancelButtonRect.top = m_cancelButtonRect.bottom - buttonHeight;
+	if (a_buttonType != m_clickedArea) {
+		m_clickedArea = a_buttonType;
+		::InvalidateRect(mh_window, &m_viewRect, false);
+	}
 }
 
-void OptionDialog::DrawTitle()
+void OptionDialog::OnButtonControlUp(const CONTROL_TYPE &a_buttonType)
 {
-	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_titleFont);
+	if (a_buttonType == m_hoverArea) {
+		// TODO:: Set adjusted width or height
+		::DestroyWindow(mh_window);
+	}
+	else {
+		m_clickedArea = CONTROL_TYPE::NONE;
+		::InvalidateRect(mh_window, &m_viewRect, false);
+	}
+}
+
+void OptionDialog::OnRadioControlUp(const CONTROL_TYPE &a_buttonType)
+{
+	if (a_buttonType != m_clickedArea) {
+		return;
+	}
+
+	if (a_buttonType == m_hoverArea) {
+		if (a_buttonType != m_selectedRadioType) {
+			m_selectedRadioType = a_buttonType;
+			::InvalidateRect(mh_window, &m_viewRect, false);
+		}
+	}
+	else {
+		m_clickedArea = CONTROL_TYPE::NONE;
+		::InvalidateRect(mh_window, &m_viewRect, false);
+	}
+}
+
+void OptionDialog::DrawUserText(const std::wstring &a_text, const DRect &a_rect, IDWriteTextFormat *const ap_textFormat)
+{
+	auto prevTextFormat = mp_direct2d->SetTextFormat(ap_textFormat);
 	mp_direct2d->SetBrushColor(m_textColor);
-	mp_direct2d->DrawUserText(L"Resize", m_titleRect);
+	mp_direct2d->DrawUserText(a_text.c_str(), a_rect);
 	mp_direct2d->SetTextFormat(prevTextFormat);
 }
 
-void OptionDialog::DrawRatioSelector()
-{
-	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_subtitleFont);
-	mp_direct2d->SetBrushColor(m_textColor);
-	mp_direct2d->DrawUserText(L"Lock aspect ratio per:", m_ratioTitleRect);
-	mp_direct2d->SetTextFormat(prevTextFormat);
-
-	DrawRadioButton(L"Width", true, m_ratioWidthRect);
-	DrawRadioButton(L"Height", false, m_ratioHeightRect);
-}
-
-void OptionDialog::DrawRadioButton(const std::wstring &a_title, const bool isClicked, const DRect &a_rect)
+void OptionDialog::DrawRadioButton(const std::wstring &a_title, const DRect &a_rect, const CONTROL_TYPE &a_type)
 {
 	// darw radio button
 	const float height = a_rect.bottom - a_rect.top;
 	const float margin = 4.0f;
 	DRect rect{ a_rect.left + margin, a_rect.top + margin, a_rect.left + height - margin, a_rect.bottom - margin };
-	
-	mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_900));
+	bool isHover = a_type == m_hoverArea;
+
+	DColor color = m_clieckedSizeEditColor;
+	if (isHover) {
+		color.a = 1.0f;
+	}
+
+	mp_direct2d->SetBrushColor(color);
 	mp_direct2d->FillEllipse(rect);
 
-	if (isClicked) {
+	if (a_type == m_selectedRadioType) {
+		const float strokeWidth = isHover ? 3.0f : 5.0f;
+		mp_direct2d->SetStrokeWidth(strokeWidth);
 		mp_direct2d->SetBrushColor(m_saveButtonColor);
-		mp_direct2d->SetStrokeWidth(5.0f);
 		mp_direct2d->DrawEllipse(rect);
 		mp_direct2d->SetStrokeWidth(1.0f);
 	}
 	else {
-		mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_700));
+		mp_direct2d->SetBrushColor(m_sizeEditColor);
 		mp_direct2d->DrawEllipse(rect);
 	}
 
-	// draw text
 	rect.left += height;
 	rect.right = a_rect.right;
-	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_textFont);
-	mp_direct2d->SetBrushColor(m_textColor);
-	mp_direct2d->DrawUserText(a_title.c_str(), rect);
-	mp_direct2d->SetTextFormat(prevTextFormat);
+	DrawUserText(a_title, rect, mp_textFont);
 }
 
-void OptionDialog::DrawEditControl(const std::wstring &a_title, const unsigned int a_value, const DRect &a_rect)
+void OptionDialog::DrawSizeEdit()
 {
+	DColor editControlColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea 
+		? m_clieckedSizeEditColor 
+		: m_sizeEditColor;
+	DColor editShadowColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea 
+		? m_clieckedSizeShadowColor 
+		: m_sizeShadowColor;	
+	if (CONTROL_TYPE::SIZE_EDIT == m_hoverArea) {
+		editControlColor.a = 1.0f;
+		editShadowColor.a = 1.0f;
+	}
+
 	// draw title
-	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_subtitleFont);
-	mp_direct2d->SetBrushColor(m_textColor);
-	mp_direct2d->DrawUserText(a_title.c_str(), a_rect);
-	mp_direct2d->SetTextFormat(prevTextFormat);
+	DrawUserText(L"Size (px)", m_sizeEditRect, mp_subtitleFont);
 
 	// draw value contents background
 	const float textOffset = m_subtitleFontSize + 7.0f;
-	DRect rect{ a_rect.left, a_rect.bottom - 2.0f, a_rect.right, a_rect.bottom + 2.0f };
-	mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_500));
+	DRect rect{ m_sizeEditRect.left, m_sizeEditRect.bottom - 2.0f, m_sizeEditRect.right, m_sizeEditRect.bottom + 2.0f };
+	mp_direct2d->SetBrushColor(editShadowColor);
 	mp_direct2d->FillRoundedRectangle(rect, 3.0f);
 
-	rect.top = a_rect.top + textOffset;
-	rect.bottom = a_rect.bottom;
-	mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_700));
+	rect.top = m_sizeEditRect.top + textOffset;
+	rect.bottom = m_sizeEditRect.bottom;
+	mp_direct2d->SetBrushColor(editControlColor);
 	mp_direct2d->FillRoundedRectangle(rect, 3.0f);
 
 	// draw value contents
 	const float margin = 10.0f;
 	rect.left += margin;
 	rect.right -= margin;
-	prevTextFormat = mp_direct2d->SetTextFormat(mp_textFont);
-	mp_direct2d->SetBrushColor(m_textColor);
-	mp_direct2d->DrawUserText(std::to_wstring(a_value).c_str(), rect);
-	mp_direct2d->SetTextFormat(prevTextFormat);
+	DrawUserText(std::to_wstring(m_size), rect, mp_textFont);
 }
 
-void OptionDialog::DrawSaveAndCancelButton()
+void OptionDialog::DrawSaveButton()
 {
-	// draw background
-	mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_900));
-	mp_direct2d->FillRectangle(m_buttonBackgroundRect);
+	DColor buttonColor = m_saveButtonColor;
+	if (CONTROL_TYPE::SAVE_BUTTON == m_hoverArea && CONTROL_TYPE::SAVE_BUTTON != m_clickedArea) {
+		buttonColor.a = 1.0f;
+	}
 
-	// draw save button
-	mp_direct2d->SetBrushColor(m_saveButtonColor);
+	mp_direct2d->SetBrushColor(buttonColor);
 	mp_direct2d->FillRoundedRectangle(m_saveButtonRect, 5.0f);
-	mp_direct2d->SetBrushColor(m_textColor);
+	DrawUserText(L"Save", m_saveButtonRect, mp_buttonFont);
+}
 
-	// draw cancel button
-	mp_direct2d->SetBrushColor(m_cancelButtonColor);
+void OptionDialog::DrawCancelButton()
+{
+	DColor buttonColor = m_cancelButtonColor;
+	if (CONTROL_TYPE::CANCEL_BUTTON == m_hoverArea && CONTROL_TYPE::CANCEL_BUTTON != m_clickedArea) {
+		buttonColor.a = 1.0f;
+	}
+
+	mp_direct2d->SetBrushColor(buttonColor);
 	mp_direct2d->FillRoundedRectangle(m_cancelButtonRect, 5.0f);
-
-	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_buttonFont);
-	mp_direct2d->SetBrushColor(m_cancelButtonColor);
-	mp_direct2d->DrawUserText(L"Save", m_saveButtonRect);
-	mp_direct2d->SetBrushColor(m_textColor);
-	mp_direct2d->DrawUserText(L"Cancel", m_cancelButtonRect);
-	mp_direct2d->SetTextFormat(prevTextFormat);
+	DrawUserText(L"Cancel", m_cancelButtonRect, mp_buttonFont);
 }

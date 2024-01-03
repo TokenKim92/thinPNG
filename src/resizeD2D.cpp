@@ -17,16 +17,16 @@ ResizeD2D::~ResizeD2D()
 	
 }
 
-void ResizeD2D::ResizeImage(const std::wstring &a_filePath, unsigned int a_width, unsigned int a_height)
+void ResizeD2D::ResizeImage(const std::wstring &a_filePath, unsigned int a_size, const OptionDialog::CONTROL_TYPE &a_selectedRadioType)
 {
-    auto p_bitmap = ScaleImageToBitmap(a_filePath, a_width, a_height);
+    auto p_bitmap = ScaleImageToBitmap(a_filePath, a_size, a_selectedRadioType);
     if (nullptr != p_bitmap) {
         SaveBitmapToFile(a_filePath, p_bitmap);
         p_bitmap->Release();
     }
 }
 
-IWICFormatConverter *ResizeD2D::ScaleImageToBitmap(const std::wstring &a_filePath, unsigned int a_width, unsigned int a_height)
+IWICFormatConverter *ResizeD2D::ScaleImageToBitmap(const std::wstring &a_filePath, unsigned int a_size, const OptionDialog::CONTROL_TYPE &a_selectedRadioType)
 {
     IWICImagingFactory *p_wicFactory = gp_appCore->GetWICFactory();
 
@@ -47,7 +47,21 @@ IWICFormatConverter *ResizeD2D::ScaleImageToBitmap(const std::wstring &a_filePat
         p_decorder->Release();
         return nullptr;
     }
-    p_scaler->Initialize(p_frameDecode, a_width, a_height, WICBitmapInterpolationModeFant);
+    
+    unsigned int originalWidth;
+    unsigned int originalHeight;
+    p_frameDecode->GetSize(&originalWidth, &originalHeight);
+    
+    unsigned int resizeWidth = a_size;
+    unsigned int resizeHeight = a_size;
+    if (OptionDialog::CONTROL_TYPE::WIDTH_RADIO == a_selectedRadioType) {
+        resizeHeight = static_cast<unsigned int>(static_cast<float>(a_size) * originalHeight / originalWidth);
+    }
+    else {
+        resizeWidth = static_cast<unsigned int>(static_cast<float>(a_size) * originalWidth / originalHeight);
+    }
+
+    p_scaler->Initialize(p_frameDecode, resizeWidth, resizeHeight, WICBitmapInterpolationModeFant);
     
     IWICFormatConverter *p_converter;
     p_wicFactory->CreateFormatConverter(&p_converter);

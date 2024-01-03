@@ -2,7 +2,6 @@
 #include "ColorPalette.h"
 #include "utility.h"
 #include "resizeD2D.h"
-#include "optionDialog.h"
 #include "shellapi.h"
 #include <filesystem>
 
@@ -16,8 +15,8 @@ thinPNG::thinPNG() :
 	WindowDialog(L"THINPNG", L"thinPNG")
 {
 	memset(&m_viewRect, 0, sizeof(RECT));
-	m_resizeWidth = 500;
-	m_resizeHeight = 500;
+	m_size = 800;
+	m_selectedRadioType = OptionDialog::CONTROL_TYPE::HEIGHT_RADIO;
 
 	mp_dashStrokeStyle = nullptr;
 	mp_gridFont = nullptr;
@@ -144,7 +143,7 @@ int thinPNG::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
 	if (PointInRectF(m_optionButtonRect, pos)) {
 		m_clickedOnOptionButton = true;
 
-		OptionDialog instanceDialog(m_resizeWidth, m_resizeHeight);
+		OptionDialog instanceDialog(m_size, m_selectedRadioType);
 		instanceDialog.Create(450, 330, 200, 200);
 
 		::InvalidateRect(mh_window, &m_viewRect, false);
@@ -185,7 +184,7 @@ int thinPNG::DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam)
 		else {
 			if (IsImageFieExtension(path.extension().string())) {
 				static_cast<ResizeD2D *>(mp_direct2d)->ResizeImage(
-					path.wstring(), m_resizeWidth, m_resizeHeight
+					path.wstring(), m_size, m_selectedRadioType
 				);
 			}
 			else {
