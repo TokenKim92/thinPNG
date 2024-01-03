@@ -139,6 +139,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\optionDialog.cpp" />
     <ClCompile Include="src\resizeD2D.cpp" />
     <ClCompile Include="src\thinPNG.cpp" />
     <ClCompile Include="src\thinPNGDialog.cpp" />
@@ -150,6 +151,7 @@
     <ClInclude Include="include\Direct2D.h" />
     <ClInclude Include="include\Direct2DEx.h" />
     <ClInclude Include="include\framework.h" />
+    <ClInclude Include="include\optionDialog.h" />
     <ClInclude Include="include\resizeD2D.h" />
     <ClInclude Include="include\Resource.h" />
     <ClInclude Include="include\targetver.h" />

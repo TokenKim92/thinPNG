@@ -1,9 +1,10 @@
 #include "thinPNGDialog.h"
 #include "ColorPalette.h"
 #include "utility.h"
+#include "resizeD2D.h"
+#include "optionDialog.h"
 #include "shellapi.h"
 #include <filesystem>
-#include "resizeD2D.h"
 
 #ifdef _DEBUG
 #pragma comment (lib, "AppTemplateDebug.lib")
@@ -25,8 +26,8 @@ thinPNG::thinPNG() :
 	memset(&m_gridRect, 0, sizeof(DRect));
 	memset(&m_optionButtonRect, 0, sizeof(DRect));
 	m_textColor = RGB_TO_COLORF(NEUTRAL_100);
-	m_optionButtonColor = RGB_TO_COLORF(ZINC_700);
-	m_optionButtonBorderColor = RGB_TO_COLORF(NEUTRAL_50);
+	m_saveButtonColor = RGB_TO_COLORF(ZINC_700);
+	m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_50);
 
 	m_hoverOnOptionButton = false;
 	m_clickedOnOptionButton = false;
@@ -98,15 +99,15 @@ void thinPNG::OnSetThemeMode()
 {
 	if (THEME_MODE::LIGHT_MODE == GetThemeMode()) {
 		m_textColor = RGB_TO_COLORF(NEUTRAL_600);
-		m_optionButtonColor = RGB_TO_COLORF(ZINC_200);
-		m_optionButtonBorderColor = RGB_TO_COLORF(NEUTRAL_800);
+		m_saveButtonColor = RGB_TO_COLORF(ZINC_200);
+		m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_800);
 
 		mp_direct2d->SetBackgroundColor(RGB_TO_COLORF(ZINC_50));
 	}
 	else {
 		m_textColor = RGB_TO_COLORF(NEUTRAL_100);
-		m_optionButtonColor = RGB_TO_COLORF(ZINC_700);
-		m_optionButtonBorderColor = RGB_TO_COLORF(NEUTRAL_50);
+		m_saveButtonColor = RGB_TO_COLORF(ZINC_700);
+		m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_50);
 
 		mp_direct2d->SetBackgroundColor(RGB_TO_COLORF(NEUTRAL_800));
 	}
@@ -142,6 +143,10 @@ int thinPNG::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
 
 	if (PointInRectF(m_optionButtonRect, pos)) {
 		m_clickedOnOptionButton = true;
+
+		OptionDialog instanceDialog(m_resizeWidth, m_resizeHeight);
+		instanceDialog.Create(450, 330, 200, 200);
+
 		::InvalidateRect(mh_window, &m_viewRect, false);
 	}
 
@@ -221,12 +226,12 @@ void thinPNG::DrawOptionButton()
 		transparency = 0.9f;
 	}
 
-	m_optionButtonColor.a = transparency;
-	m_optionButtonBorderColor.a = transparency;
+	m_saveButtonColor.a = transparency;
+	m_buttonBorderColor.a = transparency;
 
-	mp_direct2d->SetBrushColor(m_optionButtonColor);
+	mp_direct2d->SetBrushColor(m_saveButtonColor);
 	mp_direct2d->FillRoundedRectangle(m_optionButtonRect, 5.0f);
-	mp_direct2d->SetBrushColor(m_optionButtonBorderColor);
+	mp_direct2d->SetBrushColor(m_buttonBorderColor);
 	mp_direct2d->DrawRoundedRectangle(m_optionButtonRect, 5.0f);
 
 	mp_direct2d->SetBrushColor(m_textColor);

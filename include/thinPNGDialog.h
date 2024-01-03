@@ -7,8 +7,8 @@ class thinPNG : public WindowDialog
 {
 protected:
 	RECT m_viewRect;
-	unsigned short m_resizeWidth;
-	unsigned short m_resizeHeight;
+	unsigned int m_resizeWidth;
+	unsigned int m_resizeHeight;
 
 	ID2D1StrokeStyle *mp_dashStrokeStyle;
 	IDWriteTextFormat *mp_gridFont;
@@ -17,8 +17,8 @@ protected:
 	DRect m_gridRect;
 	DRect m_optionButtonRect;
 	DColor m_textColor;
-	DColor m_optionButtonColor;
-	DColor m_optionButtonBorderColor;
+	DColor m_saveButtonColor;
+	DColor m_buttonBorderColor;
 
 	bool m_hoverOnOptionButton;
 	bool m_clickedOnOptionButton;
