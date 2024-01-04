@@ -215,7 +215,7 @@ void thinPNG::DrawField()
 	mp_direct2d->SetStrokeStyle(prevStrokeStyle);
 
 	auto prevTextFormat = mp_direct2d->SetTextFormat(mp_gridFont);
-	mp_direct2d->DrawUserText(L"Drop your PNG or JPEF files here!", m_gridRect);
+	mp_direct2d->DrawUserText(L"Drop your PNG or JPG files here!", m_gridRect);
 	mp_direct2d->SetTextFormat(prevTextFormat);
 }
 
