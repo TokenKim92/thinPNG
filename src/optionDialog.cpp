@@ -299,28 +299,34 @@ int OptionDialog::KeyDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
 {
 	static const unsigned char number0 = 0x30;
 	static const unsigned char number9 = 0x39;
-
-	if (CONTROL_TYPE::SIZE_EDIT != m_clickedArea) {
-		return S_OK;
-	}
-
 	const unsigned char pressedKey = static_cast<unsigned char>(a_wordParam);
 
-	if (number0 <= pressedKey && pressedKey <= number9) {
-		OnNumberKeyDown(pressedKey, number0);
+	if (VK_RETURN == pressedKey) {
+		m_hoverArea = CONTROL_TYPE::SAVE_BUTTON;
+		OnButtonControlUp(CONTROL_TYPE::SAVE_BUTTON);
 	}
-	else if ((VK_NUMPAD0 <= pressedKey && pressedKey <= VK_NUMPAD9)) {
-		OnNumberKeyDown(pressedKey, VK_NUMPAD0);
+	else if (VK_ESCAPE == pressedKey) {
+		m_hoverArea = CONTROL_TYPE::CANCEL_BUTTON;
+		OnButtonControlUp(CONTROL_TYPE::CANCEL_BUTTON);
 	}
-	else if (VK_BACK == pressedKey) {
-		if (0 != m_tempSize) {
-			std::string numberText = std::to_string(m_tempSize);
-			numberText.pop_back();
-			m_tempSize = numberText.empty() ? 0 : std::stoi(numberText);
 
-			::InvalidateRect(mh_window, &m_viewRect, false);
+	if (CONTROL_TYPE::SIZE_EDIT == m_clickedArea) {
+		if (number0 <= pressedKey && pressedKey <= number9) {
+			OnNumberKeyDown(pressedKey, number0);
 		}
-	}
+		else if ((VK_NUMPAD0 <= pressedKey && pressedKey <= VK_NUMPAD9)) {
+			OnNumberKeyDown(pressedKey, VK_NUMPAD0);
+		}
+		else if (VK_BACK == pressedKey) {
+			if (0 != m_tempSize) {
+				std::string numberText = std::to_string(m_tempSize);
+				numberText.pop_back();
+				m_tempSize = numberText.empty() ? 0 : std::stoi(numberText);
+
+				::InvalidateRect(mh_window, &m_viewRect, false);
+			}
+		}
+	}	
 
 	return S_OK;
 }
