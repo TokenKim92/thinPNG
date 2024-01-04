@@ -34,20 +34,12 @@ OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRa
 	memset(&m_cancelButtonRect, 0, sizeof(DRect));
 	memset(&m_warningRect, 0, sizeof(DRect));
 
-	m_textColor = RGB_TO_COLORF(NEUTRAL_100);
-	m_sizeEditColor = RGB_TO_COLORF(NEUTRAL_700);
-	m_sizeShadowColor = RGB_TO_COLORF(NEUTRAL_500);
-	m_clieckedSizeEditColor = RGB_TO_COLORF(NEUTRAL_900);
-	m_clieckedSizeShadowColor = RGB_TO_COLORF(SKY_500);
-	m_saveButtonColor = RGB_TO_COLORF(SKY_400);
-	m_cancelButtonColor = RGB_TO_COLORF(NEUTRAL_800);
-
-	m_saveButtonColor.a = m_defaultTransparency;
-	m_cancelButtonColor.a = m_defaultTransparency;
-	m_sizeEditColor.a = m_defaultTransparency;
-	m_sizeShadowColor.a = m_defaultTransparency;
-	m_clieckedSizeEditColor.a = m_defaultTransparency;;
-	m_clieckedSizeShadowColor.a = m_defaultTransparency;;
+	memset(&m_textColor, 0, sizeof(DColor));
+	memset(&m_lightBackgroundColor, 0, sizeof(DRect));
+	memset(&m_backgroundColor, 0, sizeof(DRect));
+	memset(&m_darkBackgroundColor, 0, sizeof(DRect));
+	memset(&m_highlightColor, 0, sizeof(DRect));
+	memset(&m_shadowColor, 0, sizeof(DRect));
 	
 	m_hoverOnButton = false;
 	m_clickedOnButton = false;
@@ -123,6 +115,34 @@ void OptionDialog::InitRects()
 	m_warningRect.bottom = m_buttonBackgroundRect.top;
 }
 
+void OptionDialog::InitColors()
+{
+	if (THEME_MODE::LIGHT_MODE == m_themeMode) {
+		mp_direct2d->SetBackgroundColor(RGB_TO_COLORF(NEUTRAL_200));
+
+		m_textColor = RGB_TO_COLORF(NEUTRAL_900);
+		m_lightBackgroundColor = RGB_TO_COLORF(NEUTRAL_100);
+		m_backgroundColor = RGB_TO_COLORF(NEUTRAL_200);
+		m_darkBackgroundColor = RGB_TO_COLORF(NEUTRAL_300);
+		m_highlightColor = RGB_TO_COLORF(ORANGE_300);
+		m_shadowColor = RGB_TO_COLORF(NEUTRAL_400);
+	}
+	else {
+		m_textColor = RGB_TO_COLORF(NEUTRAL_100);
+		m_lightBackgroundColor = RGB_TO_COLORF(NEUTRAL_700);
+		m_backgroundColor = RGB_TO_COLORF(NEUTRAL_800);
+		m_darkBackgroundColor = RGB_TO_COLORF(NEUTRAL_900);
+		m_highlightColor = RGB_TO_COLORF(SKY_400);
+		m_shadowColor = RGB_TO_COLORF(NEUTRAL_500);
+	}
+
+	m_lightBackgroundColor.a = m_defaultTransparency;
+	m_backgroundColor.a = m_defaultTransparency;
+	m_darkBackgroundColor.a = m_defaultTransparency;
+	m_highlightColor.a = m_defaultTransparency;
+	m_shadowColor.a = m_defaultTransparency;
+}
+
 void OptionDialog::OnInitDialog()
 {
 	DisableMaximize();
@@ -130,6 +150,7 @@ void OptionDialog::OnInitDialog()
 	DisableSize();
 
 	InitRects();
+	InitColors();
 	m_controlTable = {
 		{CONTROL_TYPE::WIDTH_RADIO, m_radioWidthRect},
 		{CONTROL_TYPE::HEIGHT_RADIO, m_radioHeightRect},
@@ -183,7 +204,7 @@ void OptionDialog::OnPaint()
 	DrawSizeEdit();
 
 	// draw save and cencel button saection
-	mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_900));
+	mp_direct2d->SetBrushColor(m_darkBackgroundColor);
 	mp_direct2d->FillRectangle(m_buttonBackgroundRect);
 	DrawSaveButton();
 	DrawCancelButton();
@@ -195,17 +216,6 @@ void OptionDialog::OnPaint()
 		mp_direct2d->DrawUserText(L"(!) Invalid number value.", m_warningRect);
 		mp_direct2d->SetTextFormat(prevTextFormat);
 	}
-}
-
-void OptionDialog::OnSetThemeMode()
-{
-	if (THEME_MODE::LIGHT_MODE == GetThemeMode()) {
-
-	}
-	else {
-
-	}
-	::InvalidateRect(mh_window, &m_viewRect, false);
 }
 
 // to handle the WM_MOUSEMOVE message that occurs when a window is destroyed
@@ -391,7 +401,7 @@ void OptionDialog::DrawRadioButton(const std::wstring &a_title, const DRect &a_r
 	DRect rect{ a_rect.left + margin, a_rect.top + margin, a_rect.left + height - margin, a_rect.bottom - margin };
 	bool isHover = a_type == m_hoverArea;
 
-	DColor color = m_clieckedSizeEditColor;
+	DColor color = m_darkBackgroundColor;
 	if (isHover) {
 		color.a = 1.0f;
 	}
@@ -402,12 +412,12 @@ void OptionDialog::DrawRadioButton(const std::wstring &a_title, const DRect &a_r
 	if (a_type == m_tempSelectedRadioType) {
 		const float strokeWidth = isHover ? 3.0f : 5.0f;
 		mp_direct2d->SetStrokeWidth(strokeWidth);
-		mp_direct2d->SetBrushColor(m_saveButtonColor);
+		mp_direct2d->SetBrushColor(m_highlightColor);
 		mp_direct2d->DrawEllipse(rect);
 		mp_direct2d->SetStrokeWidth(1.0f);
 	}
 	else {
-		mp_direct2d->SetBrushColor(m_sizeEditColor);
+		mp_direct2d->SetBrushColor(m_lightBackgroundColor);
 		mp_direct2d->DrawEllipse(rect);
 	}
 
@@ -419,11 +429,11 @@ void OptionDialog::DrawRadioButton(const std::wstring &a_title, const DRect &a_r
 void OptionDialog::DrawSizeEdit()
 {
 	DColor editControlColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea 
-		? m_clieckedSizeEditColor 
-		: m_sizeEditColor;
+		? m_darkBackgroundColor 
+		: m_lightBackgroundColor;
 	DColor editShadowColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea 
-		? m_clieckedSizeShadowColor 
-		: m_sizeShadowColor;	
+		? m_highlightColor 
+		: m_shadowColor;	
 	if (CONTROL_TYPE::SIZE_EDIT == m_hoverArea) {
 		editControlColor.a = 1.0f;
 		editShadowColor.a = 1.0f;
@@ -454,10 +464,10 @@ void OptionDialog::DrawSaveButton()
 {
 	DColor buttonColor;
 	if (0 == m_tempSize) {
-		buttonColor = m_cancelButtonColor;
+		buttonColor = m_backgroundColor;
 	}
 	else {
-		buttonColor = m_saveButtonColor;
+		buttonColor = m_highlightColor;
 		if (CONTROL_TYPE::SAVE_BUTTON == m_hoverArea && CONTROL_TYPE::SAVE_BUTTON != m_clickedArea) {
 			buttonColor.a = 1.0f;
 		}
@@ -470,7 +480,7 @@ void OptionDialog::DrawSaveButton()
 
 void OptionDialog::DrawCancelButton()
 {
-	DColor buttonColor = m_cancelButtonColor;
+	DColor buttonColor = m_lightBackgroundColor;
 	if (CONTROL_TYPE::CANCEL_BUTTON == m_hoverArea && CONTROL_TYPE::CANCEL_BUTTON != m_clickedArea) {
 		buttonColor.a = 1.0f;
 	}

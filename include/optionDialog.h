@@ -39,12 +39,11 @@ protected:
 	DRect m_warningRect;
 
 	DColor m_textColor;
-	DColor m_sizeEditColor;
-	DColor m_sizeShadowColor;
-	DColor m_clieckedSizeEditColor;
-	DColor m_clieckedSizeShadowColor;
-	DColor m_saveButtonColor;
-	DColor m_cancelButtonColor;
+	DColor m_lightBackgroundColor;
+	DColor m_backgroundColor;
+	DColor m_darkBackgroundColor;
+	DColor m_highlightColor;
+	DColor m_shadowColor;
 	const float m_defaultTransparency;
 
 	bool m_hoverOnButton;
@@ -64,7 +63,6 @@ protected:
 	virtual void OnInitDialog() override;
 	virtual void OnDestroy() override;
 	virtual void OnPaint() override;
-	virtual void OnSetThemeMode() override;
 
 	// to handle the WM_MOUSEMOVE message that occurs when a window is destroyed
 	int MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam);
@@ -76,7 +74,8 @@ protected:
 	int KeyDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
 
 private:
-	void InitRects();
+	void InitRects(); 
+	void InitColors();
 
 	void OnNumberKeyDown(const unsigned char a_pressedKey, const unsigned char a_offset);
 	void OnControlDown(const CONTROL_TYPE &a_buttonType);

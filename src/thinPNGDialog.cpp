@@ -150,6 +150,11 @@ int thinPNG::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
 		OptionDialog instanceDialog(m_size, m_selectedRatioType);
 		instanceDialog.SetStyle(WS_POPUP | WS_VISIBLE);
 		instanceDialog.SetExtendStyle(WS_EX_TOPMOST);
+		auto themeMode = GetThemeMode();
+		if (THEME_MODE::DARK_MODE != themeMode) {
+			instanceDialog.SetThemeMode(themeMode);
+		}
+
 		instanceDialog.DoModal(mh_window, width, height, centerPosX - width / 2, centerPosY - height / 2);
 
 		m_size = instanceDialog.GetSize();
