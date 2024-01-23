@@ -8,6 +8,12 @@
 #define DColor	D2D1_COLOR_F
 #define DSize	D2D1_SIZE_F
 
+typedef enum class COLOR_MODE
+{
+	LIGHT,
+	DARK
+}CM;
+
 class Direct2D
 {
 protected:
@@ -42,6 +48,7 @@ public:
 		const D2D1_CAP_STYLE a_dashCap = D2D1_CAP_STYLE_ROUND, const D2D1_LINE_JOIN a_lineJoin = D2D1_LINE_JOIN_ROUND,
 		const float a_miterLimit = 10.0f, const float a_dashOffset = 0.0f
 	);
+	ID2D1Bitmap *const CreateBitmapFromHBitmap(const HBITMAP &ah_bitmap);
 
 	void SetBrushColor(const DColor &a_color);
 	void SetBackgroundColor(const DColor &a_backgroundColor);
@@ -50,12 +57,13 @@ public:
 	// returns the previous stroke style. must be released from the user
 	ID2D1StrokeStyle *const SetStrokeStyle(ID2D1StrokeStyle *const ap_strokeStyle);
 	void SetStrokeWidth(const float a_strokeWidth);
+	void SetMatrixTransform(const D2D1_MATRIX_3X2_F &a_transform);
 
 protected:
 	virtual HRESULT CreateDeviceResources();
 	virtual void DestroyDeviceResources();
 
-// drawing methode
+	// drawing methode
 public:
 	void DrawLine(const DPoint &a_startPoint, const DPoint &a_endPoint);
 	void DrawRectangle(const DPoint &a_startPoint, const DPoint &a_endPoint);
@@ -65,6 +73,7 @@ public:
 	void DrawEllipse(const DPoint &a_startPoint, const DPoint &a_endPoint);
 	void DrawEllipse(const DRect &a_rect);
 	void DrawGeometry(ID2D1Geometry *const ap_geometry);
+	void DrawBitmap(ID2D1Bitmap *const ap_bitmap, const DRect &a_rect, float opacity = 1.0f);
 
 	void FillRectangle(const DRect &a_rect);
 	void FillRectangle(const DPoint &a_startPoint, const DPoint &a_endPoint);

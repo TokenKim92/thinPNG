@@ -17,6 +17,10 @@ OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRa
 	m_subtitleFontSize(13.0f),
 	m_defaultTransparency(0.7f)
 {
+	SetSize(450, 300);
+	SetStyle(WS_POPUP | WS_VISIBLE);
+	SetExtendStyle(WS_EX_TOPMOST);
+
 	memset(&m_viewRect, 0, sizeof(RECT));
 	
 	mp_titleFont = nullptr;
@@ -84,7 +88,7 @@ void OptionDialog::InitRects()
 	m_radioHeightRect.top = m_ratioTitleRect.bottom;
 	m_radioHeightRect.bottom = m_radioHeightRect.top + radioButtonHeight;
 
-	// width edit rect
+	// edit rect
 	m_sizeEditRect.left = margin * 2.0f;
 	m_sizeEditRect.right = centerPos.x - margin;
 	m_sizeEditRect.top = m_radioWidthRect.bottom + margin;
@@ -117,7 +121,7 @@ void OptionDialog::InitRects()
 
 void OptionDialog::InitColors()
 {
-	if (THEME_MODE::LIGHT_MODE == m_themeMode) {
+	if (CM::LIGHT == m_colorMode) {
 		mp_direct2d->SetBackgroundColor(RGB_TO_COLORF(NEUTRAL_200));
 
 		m_textColor = RGB_TO_COLORF(NEUTRAL_900);
@@ -482,6 +486,9 @@ void OptionDialog::DrawSaveButton()
 	mp_direct2d->SetBrushColor(buttonColor);
 	mp_direct2d->FillRoundedRectangle(m_saveButtonRect, 5.0f);
 	DrawUserText(L"Save", m_saveButtonRect, mp_buttonFont);
+
+	auto buttonType = BT::OK;
+	SetClickedButtonType(buttonType);
 }
 
 void OptionDialog::DrawCancelButton()
@@ -496,7 +503,7 @@ void OptionDialog::DrawCancelButton()
 	DrawUserText(L"Cancel", m_cancelButtonRect, mp_buttonFont);
 }
 
-unsigned int OptionDialog::GetSize()
+unsigned int OptionDialog::GetSizeValue()
 {
 	return m_size;
 }

@@ -16,12 +16,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE ah_instance, _In_opt_ HINSTANCE ah_notUseIn
     if (S_OK == appCore.Create()) {
         const int centerPosX = ::GetSystemMetrics(SM_CXSCREEN) / 2;
         const int centerPosY = ::GetSystemMetrics(SM_CYSCREEN) / 2;
-        const int width = 330;
-        const int height = 240;
 
         thinPNG dialog;
-        dialog.SetExtendStyle(WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_ACCEPTFILES);
-        return dialog.Create(width, height, centerPosX - width / 2, centerPosY - height / 2);
+        const auto dialogSize = dialog.GetSize();
+        return dialog.DoModal(nullptr, centerPosX - dialogSize.cx / 2, centerPosY - dialogSize.cy / 2);
     }
 
     return 0;

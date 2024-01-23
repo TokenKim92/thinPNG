@@ -31,7 +31,7 @@ protected:
 	virtual void OnInitDialog() override;
 	virtual void OnDestroy() override;
 	virtual void OnPaint() override;
-	virtual void OnSetThemeMode() override;
+	virtual void OnSetColorMode() override;
 
 	void DrawField();
 	void DrawOptionButton();

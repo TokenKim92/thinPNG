@@ -56,7 +56,7 @@ public:
 	OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRadioType);
 	virtual ~OptionDialog();
 
-	unsigned int GetSize();
+	unsigned int GetSizeValue();
 	CONTROL_TYPE GetRatioType();
 
 protected:

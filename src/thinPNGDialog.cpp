@@ -14,6 +14,9 @@
 thinPNG::thinPNG() :
 	WindowDialog(L"THINPNG", L"thinPNG")
 {
+	SetSize(330, 240);
+	SetExtendStyle(WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_ACCEPTFILES);
+
 	memset(&m_viewRect, 0, sizeof(RECT));
 	m_size = 800;
 	m_selectedRatioType = OptionDialog::CONTROL_TYPE::WIDTH_RADIO;
@@ -92,9 +95,9 @@ void thinPNG::OnPaint()
 	DrawOptionButton();
 }
 
-void thinPNG::OnSetThemeMode()
+void thinPNG::OnSetColorMode()
 {
-	if (THEME_MODE::LIGHT_MODE == GetThemeMode()) {
+	if (CM::LIGHT == GetColorMode()) {
 		m_textColor = RGB_TO_COLORF(NEUTRAL_600);
 		m_saveButtonColor = RGB_TO_COLORF(ZINC_200);
 		m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_800);
@@ -144,21 +147,18 @@ int thinPNG::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
 
 		const int centerPosX = rect.left +(rect.right - rect.left) / 2;
 		const int centerPosY = rect.top + (rect.bottom - rect.top) / 2;
-		const int width = 450;
-		const int height = 300;
-
+		
 		OptionDialog instanceDialog(m_size, m_selectedRatioType);
-		instanceDialog.SetStyle(WS_POPUP | WS_VISIBLE);
-		instanceDialog.SetExtendStyle(WS_EX_TOPMOST);
-		auto themeMode = GetThemeMode();
-		if (THEME_MODE::DARK_MODE != themeMode) {
-			instanceDialog.SetThemeMode(themeMode);
+		auto colorMode = GetColorMode();
+		if (CM::DARK != colorMode) {
+			instanceDialog.SetColorMode(colorMode);
 		}
+		const auto dialogSize = instanceDialog.GetSize();
 
-		instanceDialog.DoModal(mh_window, width, height, centerPosX - width / 2, centerPosY - height / 2);
-
-		m_size = instanceDialog.GetSize();
-		m_selectedRatioType = instanceDialog.GetRatioType();
+		if (BT::OK == instanceDialog.DoModal(mh_window, centerPosX - dialogSize.cx / 2, centerPosY - dialogSize.cy / 2)) {
+			m_size = instanceDialog.GetSizeValue();
+			m_selectedRatioType = instanceDialog.GetRatioType();
+		}
 	}
 
 	return S_OK;
@@ -179,8 +179,8 @@ int thinPNG::DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam)
 		if (std::filesystem::is_directory(path)) {
 			// TODO:: if a directory is dropped
 			//for (auto const &directoryEntry : std::filesystem::directory_iterator(path)) {
-
 			//}
+			existNoneImageFile = true;
 		}
 		else {
 			if (IsImageFieExtension(path.extension().string())) {
