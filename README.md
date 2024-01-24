@@ -2,6 +2,14 @@
 
 A project with C++ to resize pictures. This project is implemented to use myself when using pictures in a web application. Because sometimes a low pixel picture is better in web applications for optimization.
 
+---
+
+The first update version of thinPNG.exe which was implemented with the MFC library.
+
+In this version the AppTemplate library is used instead of the MFC library.
+
+The AppTemplate is a library to make Windows Desktop Application easier by using Direct2D Rendering and Win32-API.
+
 ## How to install
 
 Even if there is no virus, man can't download the executable file on website, so you must download the project and build it yourself.
