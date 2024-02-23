@@ -1,123 +1,118 @@
-#ifndef _WINDOW_DIALOG_H_
-#define _WINDOW_DIALOG_H_
+#pragma once
 
 #include "framework.h"
 #include "targetver.h"
 #include "Direct2DEx.h"
+#include "Event.h"
 #include <map>
+#include <string>
+#include <memory>
 
-#define MENU_DARK_MODE      20000
-#define MENU_LIGHT_MODE     20001
+class WindowDialog;
 
-// type modifier for message handlers
-#ifndef msg_handler
-#define msg_handler
-#endif
-
-class WindowDialog; // for typedef of 'MessageHandler'
-
-typedef int (WindowDialog:: *MessageHandler)(WPARAM, LPARAM);
+typedef void (*EventListener)(Event *const ap_event, WindowDialog *const ap_dialog);
 
 class WindowDialog
 {
 public:
-    typedef enum BUTTON_TYPE
-    {
-        OK,
-        CANCEL
-    } BT;
+	static int MENU_DARK_MODE;
+	static int MENU_LIGHT_MODE;
+
+	typedef enum CLOSED_TYPE
+	{
+		OK,
+		CANCEL
+	} CT;
 
 private:
-    typedef struct THREAD_DATA
-    {
-        WindowDialog *p_dialog;
-        HANDLE h_thread;
-        POINT startPosition;
-    }TD;
+	typedef struct THREAD_DATA
+	{
+		WindowDialog *p_dialog;
+		HANDLE h_thread;
+		POINT startPosition;
+	}TD;
 
 protected:
-    wchar_t *mp_windowClass;                // name of window class
-    wchar_t *mp_title;                      // title of the application
-    int m_showType;                         // the initial output state of the application
+	std::wstring m_windowClass;             // name of window class
+	std::wstring m_title;                   // title of the application
+	int m_showType;                         // the initial output state of the application
 
-    HWND mh_window;                         // to save the main window handle
-    std::map<unsigned int, MessageHandler> m_messageMap;
+	HWND mh_window;                         // to save the main window handle
+	std::map<MID, EventListener> m_eventMap;
 
-    Direct2DEx *mp_direct2d;
-    CM m_colorMode;
-    RECT m_viewRect;
-    int m_width;
-    int m_height;
-    unsigned long m_style;
-    unsigned long m_extendStyle;
+	Direct2DEx *mp_direct2d;
+	CM m_colorMode;
+	RECT m_viewRect;
+	int m_width;
+	int m_height;
+	unsigned long m_style;
+	unsigned long m_extendStyle;
 
-    BT m_clickedButtonType;
+	CT m_clickedButtonType;
 
 private:
-    TD *mp_threadData;
+	std::unique_ptr<TD> m_threadData;
 
 public:
-    WindowDialog(const wchar_t *const ap_windowClass = nullptr, const wchar_t *const ap_title = nullptr);
-    virtual ~WindowDialog();
+	WindowDialog(const std::wstring &a_windowClass, const std::wstring &a_title = L"");
+	virtual ~WindowDialog();
 
-    bool Create(int a_x = CW_USEDEFAULT, int a_y = 0);
-    void DestroyWindow();
+	// this method is for a modeless progressing dialog
+	// but this is until not stable therefore the method DoModal() is recommended
+	bool AsyncCreate(int a_x = CW_USEDEFAULT, int a_y = 0);
+	// to destroy window after using Create(...)
+	void DestroyWindow();
 
-    WindowDialog::BT DoModal(HWND ah_parentWindow = nullptr, int a_x = CW_USEDEFAULT, int a_y = 0);
-    void Invalidate(bool backgroundErase = false);
+	WindowDialog::CT Create(HWND ah_parentWindow = nullptr, int a_x = CW_USEDEFAULT, int a_y = 0);
+	void Invalidate(const bool backgroundErase = false);
 
-    void SetSize(int a_width, int a_height);
-    void SetStyle(const unsigned long a_tyle);
-    void SetExtendStyle(const unsigned long a_extendStyle);
-    int SetColorMode(const CM a_mode);
-    void InheritDirect2D(Direct2DEx *const ap_direct2d);
+	void SetSize(const int a_width, const int a_height);
+	void SetStyle(const unsigned long a_style);
+	void SetExtendStyle(const unsigned long a_extendStyle);
+	bool SetColorMode(const CM a_mode);
+	void InheritDirect2D(Direct2DEx *const ap_direct2d);
 
-    HWND GetWidnowHandle();
-    SIZE GetSize();
-    const CM GetColorMode();
+	const HWND GetWidnowHandle();
+	const SIZE GetSize();
+	const CM GetColorMode();
 
-    void DisableMove();
-    void DisableSize();
-    void DisableMinimize();
-    void DisableMaximize();
-    void DisableClose();
-    void EnableClose();
+	void DisableMove();
+	void DisableSize();
+	void DisableMinimize();
+	void DisableMaximize();
+	void DisableClose();
+	void EnableClose();
 
 protected:
-    static LRESULT CALLBACK WindowProcedure(HWND ah_window, UINT a_messageID, WPARAM a_wordParam, LPARAM a_longParam);
+	static LRESULT CALLBACK WindowProcedure(HWND ah_window, UINT a_messageID, WPARAM a_wordParam, LPARAM a_longParam);
 
-    // window class registration
-    void RegistWindowClass();
-    // allocate and initialize a main window instance
-    bool InitInstance(int a_width = CW_USEDEFAULT, int a_height = 0, int a_x = CW_USEDEFAULT, int a_y = 0);
-    // Functions that handle messages issued to the application
-    int Run();
+	// window class registration
+	void RegistWindowClass();
+	// allocate and initialize a main window instance
+	bool InitInstance(int a_width = CW_USEDEFAULT, int a_height = 0, int a_x = CW_USEDEFAULT, int a_y = 0);
+	// functions that handle messages issued to the application
+	// returns true if closed by the PostQuitMessage.
+	bool Run();
 
-    // find the message handler for a given message ID.
-    MessageHandler GetMessageHandler(unsigned int a_messageID);
-    void AddMessageHandler(unsigned int a_messageID, MessageHandler a_handler);
-    void RemoveMessageHandler(unsigned int a_messageID);
+	// find the event listener for a given message ID.
+	EventListener GetEventListener(const MID &a_messageID);
+	Event *const EventAllocate(const MID &a_messageID, const WPARAM a_wordParam, const LPARAM a_longParam);
+	void EventFree(Event *const ap_event);
 
-    // to handle the WM_DESTROY message that occurs when a window is destroyed
-    msg_handler int DestroyHandler(WPARAM a_wordParam, LPARAM a_longParam);
-    // to handle the WM_PAINT message that occurs when a window is created
-    msg_handler int PaintHandler(WPARAM a_wordParam, LPARAM a_longParam);
-    // to handle the WM_SYSCOMMAND message
-    virtual msg_handler int SysCommandHandler(WPARAM a_menuID, LPARAM a_longParam);
+	void AddEventListener(const MID &a_messageID, EventListener ap_eventListener);
+	void RemoveEventListener(const MID &a_messageID);
 
+	virtual void OnAddEventListener();
+	virtual void OnInitDialog() {};
+	virtual void OnDestroy() {};
+	virtual void OnQuit() {};
+	virtual void OnPaint() {};
+	virtual void OnSetColorMode() {};
 
-    virtual void OnInitDialog();
-    virtual void OnDestroy();
-    virtual void OnQuit();
-    virtual void OnPaint();
-    virtual void OnSetColorMode();
+	virtual bool PreTranslateMessage(MSG &a_msg);
 
-    virtual bool PreTranslateMessage(MSG &a_msg);
-
-    void SetClickedButtonType(BT &a_type);
+	void SetClosedType(const CT &a_type);
 
 private:
-    static DWORD WINAPI RunOnOtherThread(void *ap_data);
+	static DWORD WINAPI RunOnOtherThread(void *ap_data);
 };
-
-#endif //_WINDOW_DIALOG_H_ 

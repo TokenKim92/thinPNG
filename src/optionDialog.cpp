@@ -1,11 +1,11 @@
-#include "optionDialog.h"
+#include "OptionDialog.h"
 #include "ColorPalette.h"
-#include "utility.h"
+#include "Utility.h"
 
 #ifdef _DEBUG
-#pragma comment (lib, "AppTemplateDebug.lib")
+#pragma comment (lib, "Win32CoreDebug.lib")
 #else
-#pragma comment (lib, "AppTemplate.lib")     
+#pragma comment (lib, "Win32Core.lib")     
 #endif
 
 OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRadioType) :
@@ -22,7 +22,7 @@ OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRa
 	SetExtendStyle(WS_EX_TOPMOST);
 
 	memset(&m_viewRect, 0, sizeof(RECT));
-	
+
 	mp_titleFont = nullptr;
 	mp_subtitleFont = nullptr;
 	mp_textFont = nullptr;
@@ -44,16 +44,11 @@ OptionDialog::OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRa
 	memset(&m_darkBackgroundColor, 0, sizeof(DRect));
 	memset(&m_highlightColor, 0, sizeof(DRect));
 	memset(&m_shadowColor, 0, sizeof(DRect));
-	
+
 	m_hoverOnButton = false;
 	m_clickedOnButton = false;
 	m_hoverArea = CONTROL_TYPE::NONE;
 	m_clickedArea = CONTROL_TYPE::NONE;
-}
-
-OptionDialog::~OptionDialog()
-{
-
 }
 
 void OptionDialog::InitRects()
@@ -122,22 +117,22 @@ void OptionDialog::InitRects()
 void OptionDialog::InitColors()
 {
 	if (CM::LIGHT == m_colorMode) {
-		mp_direct2d->SetBackgroundColor(RGB_TO_COLORF(NEUTRAL_200));
+		mp_direct2d->SetBackgroundColor(ChangeRgbToColorF(NEUTRAL_200));
 
-		m_textColor = RGB_TO_COLORF(NEUTRAL_900);
-		m_lightBackgroundColor = RGB_TO_COLORF(NEUTRAL_100);
-		m_backgroundColor = RGB_TO_COLORF(NEUTRAL_200);
-		m_darkBackgroundColor = RGB_TO_COLORF(NEUTRAL_300);
-		m_highlightColor = RGB_TO_COLORF(ORANGE_300);
-		m_shadowColor = RGB_TO_COLORF(NEUTRAL_400);
+		m_textColor = ChangeRgbToColorF(NEUTRAL_900);
+		m_lightBackgroundColor = ChangeRgbToColorF(NEUTRAL_100);
+		m_backgroundColor = ChangeRgbToColorF(NEUTRAL_200);
+		m_darkBackgroundColor = ChangeRgbToColorF(NEUTRAL_300);
+		m_highlightColor = ChangeRgbToColorF(ORANGE_300);
+		m_shadowColor = ChangeRgbToColorF(NEUTRAL_400);
 	}
 	else {
-		m_textColor = RGB_TO_COLORF(NEUTRAL_100);
-		m_lightBackgroundColor = RGB_TO_COLORF(NEUTRAL_700);
-		m_backgroundColor = RGB_TO_COLORF(NEUTRAL_800);
-		m_darkBackgroundColor = RGB_TO_COLORF(NEUTRAL_900);
-		m_highlightColor = RGB_TO_COLORF(SKY_400);
-		m_shadowColor = RGB_TO_COLORF(NEUTRAL_500);
+		m_textColor = ChangeRgbToColorF(NEUTRAL_100);
+		m_lightBackgroundColor = ChangeRgbToColorF(NEUTRAL_700);
+		m_backgroundColor = ChangeRgbToColorF(NEUTRAL_800);
+		m_darkBackgroundColor = ChangeRgbToColorF(NEUTRAL_900);
+		m_highlightColor = ChangeRgbToColorF(SKY_400);
+		m_shadowColor = ChangeRgbToColorF(NEUTRAL_500);
 	}
 
 	m_lightBackgroundColor.a = m_defaultTransparency;
@@ -145,6 +140,126 @@ void OptionDialog::InitColors()
 	m_darkBackgroundColor.a = m_defaultTransparency;
 	m_highlightColor.a = m_defaultTransparency;
 	m_shadowColor.a = m_defaultTransparency;
+}
+
+void OptionDialog::OnAddEventListener()
+{
+	WindowDialog::OnAddEventListener();
+
+	AddEventListener(
+		MID::MouseMove,
+		[](Event *const ap_event, WindowDialog *const ap_dialog) {
+			const POINT point = { static_cast<MouseEvent *>(ap_event)->clientX, static_cast<MouseEvent *>(ap_event)->clientY };
+			auto dialog = static_cast<OptionDialog *>(ap_dialog);
+
+			for (auto const &[type, rect] : dialog->m_controlTable) {
+				if (PointInRectF(rect, point)) {
+					if (type != dialog->m_hoverArea) {
+						dialog->m_hoverArea = type;
+						::InvalidateRect(dialog->mh_window, &dialog->m_viewRect, true);
+					}
+
+					return;
+				}
+			}
+
+			if (CONTROL_TYPE::NONE != dialog->m_hoverArea) {
+				dialog->m_hoverArea = CONTROL_TYPE::NONE;
+				::InvalidateRect(dialog->mh_window, &dialog->m_viewRect, false);
+			}
+		}
+	);
+
+	AddEventListener(
+		MID::MouseLeftDown,
+		[](Event *const ap_event, WindowDialog *const ap_dialog) {
+			const POINT point = { static_cast<MouseEvent *>(ap_event)->clientX, static_cast<MouseEvent *>(ap_event)->clientY };
+			auto dialog = static_cast<OptionDialog *>(ap_dialog);
+
+			for (auto const &[type, rect] : dialog->m_controlTable) {
+				if (PointInRectF(rect, point)) {
+					::SetCapture(dialog->mh_window);
+					dialog->m_clickedArea = type;
+					::InvalidateRect(dialog->mh_window, &dialog->m_viewRect, false);
+					return;
+				}
+			}
+
+			if (CONTROL_TYPE::NONE != dialog->m_clickedArea) {
+				dialog->m_clickedArea = CONTROL_TYPE::NONE;
+				::InvalidateRect(dialog->mh_window, &dialog->m_viewRect, false);
+			}
+		}
+	);
+	AddEventListener(
+		MID::MouseLeftUp,
+		[](Event *const ap_event, WindowDialog *const ap_dialog) {
+			auto dialog = static_cast<OptionDialog *>(ap_dialog);
+
+			if (CONTROL_TYPE::NONE == dialog->m_clickedArea) {
+				return;
+			}
+
+			::ReleaseCapture();
+
+			switch (dialog->m_clickedArea)
+			{
+			case CONTROL_TYPE::WIDTH_RADIO:
+				dialog->OnRadioControlUp(CONTROL_TYPE::WIDTH_RADIO);
+				break;
+			case CONTROL_TYPE::HEIGHT_RADIO:
+				dialog->OnRadioControlUp(CONTROL_TYPE::HEIGHT_RADIO);
+				break;
+			case CONTROL_TYPE::SIZE_EDIT:
+				break;
+			case CONTROL_TYPE::SAVE_BUTTON:
+				dialog->OnButtonControlUp(CONTROL_TYPE::SAVE_BUTTON);
+				break;
+			case CONTROL_TYPE::CANCEL_BUTTON:
+				dialog->OnButtonControlUp(CONTROL_TYPE::CANCEL_BUTTON);
+				break;
+			default:
+				break;
+			}
+		}
+	);
+	AddEventListener(
+		MID::KeyDown,
+		[](Event *const ap_event, WindowDialog *const ap_dialog) {
+			auto keyboardEvent = static_cast<KeyboardEvent *>(ap_event);
+			auto dialog = static_cast<OptionDialog *>(ap_dialog);
+
+			static const unsigned short number0 = 0x30;
+			static const unsigned short number9 = 0x39;
+
+			if (VK_RETURN == keyboardEvent->virtualKey) {
+				dialog->m_hoverArea = CONTROL_TYPE::SAVE_BUTTON;
+				dialog->OnButtonControlUp(CONTROL_TYPE::SAVE_BUTTON);
+			}
+			else if (VK_ESCAPE == keyboardEvent->virtualKey) {
+				dialog->m_hoverArea = CONTROL_TYPE::CANCEL_BUTTON;
+				dialog->OnButtonControlUp(CONTROL_TYPE::CANCEL_BUTTON);
+			}
+
+			if (CONTROL_TYPE::SIZE_EDIT == dialog->m_clickedArea) {
+				if (number0 <= keyboardEvent->virtualKey && keyboardEvent->virtualKey <= number9) {
+					dialog->OnNumberKeyDown(keyboardEvent->virtualKey, number0);
+				}
+				else if ((VK_NUMPAD0 <= keyboardEvent->virtualKey && keyboardEvent->virtualKey <= VK_NUMPAD9)) {
+					dialog->OnNumberKeyDown(keyboardEvent->virtualKey, VK_NUMPAD0);
+				}
+				else if (VK_BACK == keyboardEvent->virtualKey) {
+					if (0 != dialog->m_tempSize) {
+						std::string numberText = std::to_string(dialog->m_tempSize);
+						numberText.pop_back();
+						dialog->m_tempSize = numberText.empty() ? 0 : std::stoi(numberText);
+
+						::InvalidateRect(dialog->mh_window, &dialog->m_viewRect, false);
+					}
+				}
+			}
+		}
+	);
 }
 
 void OptionDialog::OnInitDialog()
@@ -164,24 +279,18 @@ void OptionDialog::OnInitDialog()
 	};
 
 	// create title font
-	mp_titleFont = mp_direct2d->CreateTextFormat(DEFAULT_FONT_NAME, 20.0f, DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL);
+	mp_titleFont = mp_direct2d->CreateTextFormat(Direct2DEx::DEFAULT_FONT_NAME, 20.0f, DWRITE_FONT_WEIGHT_SEMI_BOLD, DWRITE_FONT_STYLE_NORMAL);
 	mp_titleFont->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 	mp_titleFont->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 	// create subtitle font
-	mp_subtitleFont = mp_direct2d->CreateTextFormat(DEFAULT_FONT_NAME, m_subtitleFontSize, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
+	mp_subtitleFont = mp_direct2d->CreateTextFormat(Direct2DEx::DEFAULT_FONT_NAME, m_subtitleFontSize, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
 	// text subtitle font
-	mp_textFont = mp_direct2d->CreateTextFormat(DEFAULT_FONT_NAME, 15.0f, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
+	mp_textFont = mp_direct2d->CreateTextFormat(Direct2DEx::DEFAULT_FONT_NAME, 15.0f, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
 	mp_textFont->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 	// button text font
-	mp_buttonFont = mp_direct2d->CreateTextFormat(DEFAULT_FONT_NAME, 15.0f, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
+	mp_buttonFont = mp_direct2d->CreateTextFormat(Direct2DEx::DEFAULT_FONT_NAME, 15.0f, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
 	mp_buttonFont->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 	mp_buttonFont->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
-	
-	// add message handlers
-	AddMessageHandler(WM_MOUSEMOVE, static_cast<MessageHandler>(&OptionDialog::MouseMoveHandler));
-	AddMessageHandler(WM_LBUTTONDOWN, static_cast<MessageHandler>(&OptionDialog::MouseLeftButtonDownHandler));
-	AddMessageHandler(WM_LBUTTONUP, static_cast<MessageHandler>(&OptionDialog::MouseLeftButtonUpHandler));
-	AddMessageHandler(WM_KEYDOWN, static_cast<MessageHandler>(&OptionDialog::KeyDownHandler));
 }
 
 void OptionDialog::OnDestroy()
@@ -216,126 +325,13 @@ void OptionDialog::OnPaint()
 	// draw warning section if the size is 0
 	if (0 == m_tempSize) {
 		auto prevTextFormat = mp_direct2d->SetTextFormat(mp_textFont);
-		mp_direct2d->SetBrushColor(RGB_TO_COLORF(RED_300));
+		mp_direct2d->SetBrushColor(ChangeRgbToColorF(RED_300));
 		mp_direct2d->DrawUserText(L"(!) Invalid number value.", m_warningRect);
 		mp_direct2d->SetTextFormat(prevTextFormat);
 	}
 }
 
-// to handle the WM_MOUSEMOVE message that occurs when a window is destroyed
-int OptionDialog::MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{
-	const POINT pos = { LOWORD(a_longParam), HIWORD(a_longParam) };
-
-	for (auto const &[type, rect] : m_controlTable) {
-		if (PointInRectF(rect, pos)) {
-			if (type != m_hoverArea) {
-				m_hoverArea = type;
-				::InvalidateRect(mh_window, &m_viewRect, true);
-			}
-
-			return S_OK;
-		}
-	}
-
-	if (CONTROL_TYPE::NONE != m_hoverArea) {
-		m_hoverArea = CONTROL_TYPE::NONE;
-		::InvalidateRect(mh_window, &m_viewRect, false);
-	}
-
-	return S_OK;
-}
-
-// to handle the WM_LBUTTONDOWN  message that occurs when a window is destroyed
-int OptionDialog::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{
-	const POINT pos = { LOWORD(a_longParam), HIWORD(a_longParam) };
-	
-	for (auto const &[type, rect] : m_controlTable) {
-		if (PointInRectF(rect, pos)) {
-			::SetCapture(mh_window);
-			m_clickedArea = type;
-			::InvalidateRect(mh_window, &m_viewRect, false);
-			return S_OK;
-		}
-	}
-
-	if (CONTROL_TYPE::NONE != m_clickedArea) {
-		m_clickedArea = CONTROL_TYPE::NONE;
-		::InvalidateRect(mh_window, &m_viewRect, false);
-	}
-
-	return S_OK;
-}
-
-// to handle the WM_LBUTTONUP  message that occurs when a window is destroyed
-int OptionDialog::MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{	
-	if (CONTROL_TYPE::NONE != m_clickedArea) {
-		::ReleaseCapture();
-
-		switch (m_clickedArea)
-		{
-		case CONTROL_TYPE::WIDTH_RADIO:
-			OnRadioControlUp(CONTROL_TYPE::WIDTH_RADIO);
-			break;
-		case CONTROL_TYPE::HEIGHT_RADIO:
-			OnRadioControlUp(CONTROL_TYPE::HEIGHT_RADIO);
-			break;
-		case CONTROL_TYPE::SIZE_EDIT:
-			break;
-		case CONTROL_TYPE::SAVE_BUTTON:
-			OnButtonControlUp(CONTROL_TYPE::SAVE_BUTTON);
-			break;
-		case CONTROL_TYPE::CANCEL_BUTTON:
-			OnButtonControlUp(CONTROL_TYPE::CANCEL_BUTTON);
-			break;
-		default:
-			break;
-		}
-	}
-
-	return S_OK;
-}
-
-// to handle the WM_KEYDOWN message that occurs when a window is destroyed
-int OptionDialog::KeyDownHandler(WPARAM a_wordParam, LPARAM a_longParam) 
-{
-	static const unsigned char number0 = 0x30;
-	static const unsigned char number9 = 0x39;
-	const unsigned char pressedKey = static_cast<unsigned char>(a_wordParam);
-
-	if (VK_RETURN == pressedKey) {
-		m_hoverArea = CONTROL_TYPE::SAVE_BUTTON;
-		OnButtonControlUp(CONTROL_TYPE::SAVE_BUTTON);
-	}
-	else if (VK_ESCAPE == pressedKey) {
-		m_hoverArea = CONTROL_TYPE::CANCEL_BUTTON;
-		OnButtonControlUp(CONTROL_TYPE::CANCEL_BUTTON);
-	}
-
-	if (CONTROL_TYPE::SIZE_EDIT == m_clickedArea) {
-		if (number0 <= pressedKey && pressedKey <= number9) {
-			OnNumberKeyDown(pressedKey, number0);
-		}
-		else if ((VK_NUMPAD0 <= pressedKey && pressedKey <= VK_NUMPAD9)) {
-			OnNumberKeyDown(pressedKey, VK_NUMPAD0);
-		}
-		else if (VK_BACK == pressedKey) {
-			if (0 != m_tempSize) {
-				std::string numberText = std::to_string(m_tempSize);
-				numberText.pop_back();
-				m_tempSize = numberText.empty() ? 0 : std::stoi(numberText);
-
-				::InvalidateRect(mh_window, &m_viewRect, false);
-			}
-		}
-	}	
-
-	return S_OK;
-}
-
-void OptionDialog::OnNumberKeyDown(const unsigned char a_pressedKey, const unsigned char a_offset)
+void OptionDialog::OnNumberKeyDown(const unsigned short a_pressedKey, const unsigned char a_offset)
 {
 	std::string previousNumber = std::to_string(m_tempSize);
 
@@ -363,13 +359,13 @@ void OptionDialog::OnButtonControlUp(const CONTROL_TYPE &a_buttonType)
 			::DestroyWindow(mh_window);
 			return;
 		}
-		
+
 		// on click save button
 		if (0 != m_tempSize) {
 			m_size = m_tempSize;
 			m_selectedRadioType = m_tempSelectedRadioType;
 			::DestroyWindow(mh_window);
-		}		
+		}
 	}
 	else {
 		m_clickedArea = CONTROL_TYPE::NONE;
@@ -438,12 +434,12 @@ void OptionDialog::DrawRadioButton(const std::wstring &a_title, const DRect &a_r
 
 void OptionDialog::DrawSizeEdit()
 {
-	DColor editControlColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea 
-		? m_darkBackgroundColor 
+	DColor editControlColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea
+		? m_darkBackgroundColor
 		: m_lightBackgroundColor;
-	DColor editShadowColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea 
-		? m_highlightColor 
-		: m_shadowColor;	
+	DColor editShadowColor = CONTROL_TYPE::SIZE_EDIT == m_clickedArea
+		? m_highlightColor
+		: m_shadowColor;
 	if (CONTROL_TYPE::SIZE_EDIT == m_hoverArea) {
 		editControlColor.a = 1.0f;
 		editShadowColor.a = 1.0f;
@@ -487,8 +483,8 @@ void OptionDialog::DrawSaveButton()
 	mp_direct2d->FillRoundedRectangle(m_saveButtonRect, 5.0f);
 	DrawUserText(L"Save", m_saveButtonRect, mp_buttonFont);
 
-	auto buttonType = BT::OK;
-	SetClickedButtonType(buttonType);
+	auto buttonType = CT::OK;
+	SetClosedType(buttonType);
 }
 
 void OptionDialog::DrawCancelButton()

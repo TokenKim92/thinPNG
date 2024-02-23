@@ -1,18 +1,17 @@
-#include "thinPNGDialog.h"
+#include "ThinPNGDialog.h"
 #include "ColorPalette.h"
-#include "utility.h"
-#include "resizeD2D.h"
-#include "shellapi.h"
+#include "Utility.h"
+#include "ResizeD2D.h"
 #include <filesystem>
 
 #ifdef _DEBUG
-#pragma comment (lib, "AppTemplateDebug.lib")
+#pragma comment (lib, "Win32CoreDebug.lib")
 #else
-#pragma comment (lib, "AppTemplate.lib")     
+#pragma comment (lib, "Win32Core.lib")     
 #endif
 
-thinPNG::thinPNG() :
-	WindowDialog(L"THINPNG", L"thinPNG")
+ThinPNGDialog::ThinPNGDialog() :
+	WindowDialog(L"THINPNGDIALOG", L"ThinPNGDialog")
 {
 	SetSize(330, 240);
 	SetExtendStyle(WS_EX_TOPMOST | WS_EX_LAYERED | WS_EX_ACCEPTFILES);
@@ -27,18 +26,112 @@ thinPNG::thinPNG() :
 
 	memset(&m_gridRect, 0, sizeof(DRect));
 	memset(&m_optionButtonRect, 0, sizeof(DRect));
-	m_textColor = RGB_TO_COLORF(NEUTRAL_100);
-	m_saveButtonColor = RGB_TO_COLORF(ZINC_700);
-	m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_50);
+	m_textColor = ChangeRgbToColorF(NEUTRAL_100);
+	m_saveButtonColor = ChangeRgbToColorF(ZINC_700);
+	m_buttonBorderColor = ChangeRgbToColorF(NEUTRAL_50);
 
 	m_hoverOnOptionButton = false;
 }
 
-thinPNG::~thinPNG()
+void ThinPNGDialog::OnAddEventListener()
 {
+	WindowDialog::OnAddEventListener();
+
+	AddEventListener(
+		MID::MouseMove,
+		[](Event *const ap_event, WindowDialog *const ap_dialog) {
+			auto mouseEvent = static_cast<MouseEvent *>(ap_event);
+			auto dialog = static_cast<ThinPNGDialog *>(ap_dialog);
+
+			if (PointInRectF(dialog->m_optionButtonRect, { mouseEvent->clientX, mouseEvent->clientY })) {
+				if (!dialog->m_hoverOnOptionButton) {
+					dialog->m_hoverOnOptionButton = true;
+					::InvalidateRect(dialog->mh_window, &dialog->m_viewRect, false);
+				}
+
+				return;
+			}
+
+			if (dialog->m_hoverOnOptionButton) {
+				dialog->m_hoverOnOptionButton = false;
+				::InvalidateRect(dialog->mh_window, &dialog->m_viewRect, false);
+			}
+		}
+	);
+
+	AddEventListener(
+		MID::MouseLeftDown,
+		[](Event *const ap_event, WindowDialog *const ap_dialog) {
+			auto mouseEvent = static_cast<MouseEvent *>(ap_event);
+			auto dialog = static_cast<ThinPNGDialog *>(ap_dialog);
+
+			if (PointInRectF(dialog->m_optionButtonRect, { mouseEvent->clientX, mouseEvent->clientY })) {
+				RECT rect;
+				::GetWindowRect(dialog->mh_window, &rect);
+
+				const int centerPosX = rect.left + (rect.right - rect.left) / 2;
+				const int centerPosY = rect.top + (rect.bottom - rect.top) / 2;
+
+				OptionDialog instanceDialog(dialog->m_size, dialog->m_selectedRatioType);
+				auto colorMode = dialog->GetColorMode();
+				if (CM::DARK != colorMode) {
+					instanceDialog.SetColorMode(colorMode);
+				}
+				const auto dialogSize = instanceDialog.GetSize();
+
+				if (CT::OK == instanceDialog.Create(dialog->mh_window, centerPosX - dialogSize.cx / 2, centerPosY - dialogSize.cy / 2)) {
+					dialog->m_size = instanceDialog.GetSizeValue();
+					dialog->m_selectedRatioType = instanceDialog.GetRatioType();
+				}
+			}
+		}
+	);
+
+	AddEventListener(
+		MID::DropFile,
+		[](Event *const ap_event, WindowDialog *const ap_dialog) {
+			auto dropFileInfo = static_cast<DropFileEvent *>(ap_event)->m_dropInfo;
+			auto dialog = static_cast<ThinPNGDialog *>(ap_dialog);
+
+			const unsigned int count = DragQueryFile(dropFileInfo, 0xFFFFFFFF, nullptr, 0);
+			wchar_t filePath[MAX_PATH] = { 0, };
+			bool existNoneImageFile = false;
+
+			for (unsigned int i = 0; i < count; i++) {
+				DragQueryFile(dropFileInfo, i, filePath, MAX_PATH);
+
+				std::filesystem::path path(filePath);
+				if (std::filesystem::is_directory(path)) {
+					// TODO:: if a directory is dropped
+					//for (auto const &directoryEntry : std::filesystem::directory_iterator(path)) {
+					//}
+					existNoneImageFile = true;
+				}
+				else {
+					if (IsImageFieExtension(path.extension().string())) {
+						static_cast<ResizeD2D *>(dialog->mp_direct2d)->ResizeImage(
+							path.wstring(), dialog->m_size, dialog->m_selectedRatioType
+						);
+					}
+					else {
+						existNoneImageFile = true;
+					}
+				}
+			}
+
+			if (existNoneImageFile) {
+				MessageBox(
+					dialog->mh_window,
+					L"Files which are not in PNG or JPEG format are ignored.",
+					L"Invalid file format warning",
+					MB_OK | MB_ICONWARNING
+				);
+			}
+		}
+	);
 }
 
-void thinPNG::OnInitDialog()
+void ThinPNGDialog::OnInitDialog()
 {
 	DisableMaximize();
 	DisableMinimize();
@@ -60,153 +153,56 @@ void thinPNG::OnInitDialog()
 	m_optionButtonRect.right = m_viewRect.right - optionRectOffset;
 	m_optionButtonRect.bottom = m_viewRect.bottom - gridRectOffset;
 
-	mp_direct2d->SetBrushColor(RGB_TO_COLORF(NEUTRAL_100));
+	mp_direct2d->SetBrushColor(ChangeRgbToColorF(NEUTRAL_100));
 	mp_dashStrokeStyle = mp_direct2d->CreateUserStrokeStyle(D2D1_DASH_STYLE_DASH);
 
-	mp_gridFont = mp_direct2d->CreateTextFormat(DEFAULT_FONT_NAME, 15.0f, DWRITE_FONT_WEIGHT_BOLD, DWRITE_FONT_STYLE_NORMAL);
+	mp_gridFont = mp_direct2d->CreateTextFormat(Direct2DEx::DEFAULT_FONT_NAME, 15.0f, DWRITE_FONT_WEIGHT_BOLD, DWRITE_FONT_STYLE_NORMAL);
 	mp_gridFont->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 	mp_gridFont->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-	mp_optionFont = mp_direct2d->CreateTextFormat(DEFAULT_FONT_NAME, 12.0f, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
+	mp_optionFont = mp_direct2d->CreateTextFormat(Direct2DEx::DEFAULT_FONT_NAME, 12.0f, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STYLE_NORMAL);
 	mp_optionFont->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
 	mp_optionFont->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
 
-	// add message handlers
-	AddMessageHandler(WM_MOUSEMOVE, static_cast<MessageHandler>(&thinPNG::MouseMoveHandler));
-	AddMessageHandler(WM_LBUTTONDOWN, static_cast<MessageHandler>(&thinPNG::MouseLeftButtonDownHandler));
-	AddMessageHandler(WM_DROPFILES, static_cast<MessageHandler>(&thinPNG::DropFilesHandler));
-
-	auto p_direct2d = new ResizeD2D(mh_window, &m_viewRect);
-	p_direct2d->Create();
-	InheritDirect2D(p_direct2d);
+	InheritDirect2D(new ResizeD2D(mh_window, &m_viewRect));
+	mp_direct2d->Create();
 }
 
-void thinPNG::OnDestroy()
+void ThinPNGDialog::OnDestroy()
 {
 	InterfaceRelease(&mp_dashStrokeStyle);
 	InterfaceRelease(&mp_gridFont);
 	InterfaceRelease(&mp_optionFont);
 }
 
-void thinPNG::OnPaint()
+void ThinPNGDialog::OnPaint()
 {
 	mp_direct2d->Clear();
 	DrawField();
 	DrawOptionButton();
 }
 
-void thinPNG::OnSetColorMode()
+void ThinPNGDialog::OnSetColorMode()
 {
 	if (CM::LIGHT == GetColorMode()) {
-		m_textColor = RGB_TO_COLORF(NEUTRAL_600);
-		m_saveButtonColor = RGB_TO_COLORF(ZINC_200);
-		m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_800);
+		m_textColor = ChangeRgbToColorF(NEUTRAL_600);
+		m_saveButtonColor = ChangeRgbToColorF(ZINC_200);
+		m_buttonBorderColor = ChangeRgbToColorF(NEUTRAL_800);
 
-		mp_direct2d->SetBackgroundColor(RGB_TO_COLORF(ZINC_50));
+		mp_direct2d->SetBackgroundColor(ChangeRgbToColorF(ZINC_50));
 	}
 	else {
-		m_textColor = RGB_TO_COLORF(NEUTRAL_100);
-		m_saveButtonColor = RGB_TO_COLORF(ZINC_700);
-		m_buttonBorderColor = RGB_TO_COLORF(NEUTRAL_50);
+		m_textColor = ChangeRgbToColorF(NEUTRAL_100);
+		m_saveButtonColor = ChangeRgbToColorF(ZINC_700);
+		m_buttonBorderColor = ChangeRgbToColorF(NEUTRAL_50);
 
-		mp_direct2d->SetBackgroundColor(RGB_TO_COLORF(NEUTRAL_800));
+		mp_direct2d->SetBackgroundColor(ChangeRgbToColorF(NEUTRAL_800));
 	}
 
 	::InvalidateRect(mh_window, &m_viewRect, false);
 }
 
-// to handle the WM_MOUSEMOVE message that occurs when a window is destroyed
-int thinPNG::MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{
-	const POINT pos = { LOWORD(a_longParam), HIWORD(a_longParam) };
-
-	if (PointInRectF(m_optionButtonRect, pos)) {
-		if (!m_hoverOnOptionButton) {
-			m_hoverOnOptionButton = true;
-			::InvalidateRect(mh_window, &m_viewRect, false);
-		}
-	}
-	else {
-		if (m_hoverOnOptionButton) {
-			m_hoverOnOptionButton = false;
-			::InvalidateRect(mh_window, &m_viewRect, false);
-		}
-	}
-
-	return S_OK;
-}
-
-// to handle the WM_LBUTTONDOWN  message that occurs when a window is destroyed
-int thinPNG::MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{
-	const POINT pos = { LOWORD(a_longParam), HIWORD(a_longParam) };
-
-	if (PointInRectF(m_optionButtonRect, pos)) {
-		RECT rect;
-		::GetWindowRect(mh_window, &rect);
-
-		const int centerPosX = rect.left +(rect.right - rect.left) / 2;
-		const int centerPosY = rect.top + (rect.bottom - rect.top) / 2;
-		
-		OptionDialog instanceDialog(m_size, m_selectedRatioType);
-		auto colorMode = GetColorMode();
-		if (CM::DARK != colorMode) {
-			instanceDialog.SetColorMode(colorMode);
-		}
-		const auto dialogSize = instanceDialog.GetSize();
-
-		if (BT::OK == instanceDialog.DoModal(mh_window, centerPosX - dialogSize.cx / 2, centerPosY - dialogSize.cy / 2)) {
-			m_size = instanceDialog.GetSizeValue();
-			m_selectedRatioType = instanceDialog.GetRatioType();
-		}
-	}
-
-	return S_OK;
-}
-
-// to handle the WM_DROPFILES message that occurs when a window is destroyed
-int thinPNG::DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam)
-{
-	const auto h_dropInfo = reinterpret_cast<HDROP>(a_wordParam);
-	const unsigned int count = DragQueryFile(h_dropInfo, 0xFFFFFFFF, nullptr, 0);
-	wchar_t filePath[MAX_PATH] = { 0, };
-	bool existNoneImageFile = false;
-
-	for (unsigned int i = 0; i < count; i++) {
-		DragQueryFile(h_dropInfo, i, filePath, MAX_PATH);
-
-		std::filesystem::path path(filePath);
-		if (std::filesystem::is_directory(path)) {
-			// TODO:: if a directory is dropped
-			//for (auto const &directoryEntry : std::filesystem::directory_iterator(path)) {
-			//}
-			existNoneImageFile = true;
-		}
-		else {
-			if (IsImageFieExtension(path.extension().string())) {
-				static_cast<ResizeD2D *>(mp_direct2d)->ResizeImage(
-					path.wstring(), m_size, m_selectedRatioType
-				);
-			}
-			else {
-				existNoneImageFile = true;
-			}
-		}
-	}
-
-	if (existNoneImageFile) {
-		MessageBox(
-			mh_window,
-			L"Files which are not in PNG or JPEG format are ignored.",
-			L"Invalid file format warning",
-			MB_OK | MB_ICONWARNING
-		);
-	}
-
-	return S_OK;
-}
-
-void thinPNG::DrawField()
+void ThinPNGDialog::DrawField()
 {
 	mp_direct2d->SetBrushColor(m_textColor);
 
@@ -219,7 +215,7 @@ void thinPNG::DrawField()
 	mp_direct2d->SetTextFormat(prevTextFormat);
 }
 
-void thinPNG::DrawOptionButton()
+void ThinPNGDialog::DrawOptionButton()
 {
 	float transparency = m_hoverOnOptionButton ? 1.0f : 0.7f;
 

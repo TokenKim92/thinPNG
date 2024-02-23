@@ -1,10 +1,7 @@
-#ifndef _DIRECT_2D_EX_H_
-#define _DIRECT_2D_EX_H_
+#pragma once
 
 #include "Direct2D.h"
 #include <string>
-
-#define DEFAULT_FONT_NAME	L"Malgun Gothic"
 
 struct FONT_FORMAT
 {
@@ -17,6 +14,9 @@ struct FONT_FORMAT
 // possible draw text
 class Direct2DEx : public Direct2D
 {
+public:
+	static std::wstring DEFAULT_FONT_NAME;
+
 protected:
 	IDWriteTextFormat *mp_textFormat;				// font information used as output for strings
 	IDWriteFontFace *mp_fontFace;
@@ -24,19 +24,19 @@ protected:
 	FONT_FORMAT m_fontFormat;
 
 public:
-	Direct2DEx(const HWND ah_window, const RECT *const ap_viewRect = nullptr);
+	Direct2DEx(const HWND &ah_window, const RECT *const ap_viewRect = nullptr);
 	virtual ~Direct2DEx();
 
 	// the return object of 'IDWriteTextFormat *' should be deleted from the user with the function 'InterfaceRelease'
 	IDWriteTextFormat *CreateTextFormat(
-		const wchar_t *ap_fontName, float a_fontSize, DWRITE_FONT_WEIGHT a_fontWeight,
+		const std::wstring &a_fontName, float a_fontSize, DWRITE_FONT_WEIGHT a_fontWeight,
 		DWRITE_FONT_STYLE a_fontStyle, DWRITE_FONT_STRETCH a_fontStretch = DWRITE_FONT_STRETCH_NORMAL, const wchar_t *ap_localName = L"en-us"
 	);
 	// the return object of 'IDWriteFontFace *' should be deleted from the user with the function 'InterfaceRelease'
 	IDWriteFontFace *CreateFontFace(const wchar_t *const ap_name, const DWRITE_FONT_WEIGHT a_weight, const DWRITE_FONT_STYLE a_style);
 
 	bool SetFontFormat(const FONT_FORMAT &a_format);
-	bool SetFontName(const wchar_t *const ap_name);
+	bool SetFontName(const std::wstring &ap_name);
 	bool SetFontSize(const float a_size);
 	bool SetFontWeight(const DWRITE_FONT_WEIGHT a_weight);
 	bool SetFontStyle(const DWRITE_FONT_STYLE a_style);
@@ -47,19 +47,17 @@ public:
 	// return the previous object of `IDWriteFontFace`
 	IDWriteFontFace *const SetFontFace(IDWriteFontFace *const ap_fontFace);
 
-	DSize GetTextExtent(const wchar_t *const ap_str, const float a_maxWidth = 0.0f, const float a_maxHeight = 0.0f);
+	DSize GetTextExtent(const std::wstring &a_text, const float a_maxWidth = 0.0f, const float a_maxHeight = 0.0f);
 
 protected:
-	virtual HRESULT CreateDeviceResources() override;
+	virtual bool CreateDeviceResources() override;
 	virtual void DestroyDeviceResources() override;
 
 	// the return object of `ID2D1PathGeometry *` should be deleted from the user with the function `InterfaceRelease`
-	ID2D1PathGeometry *CreateTextPathGeometry(const wchar_t *const ap_text, const float a_fontSize);
+	ID2D1PathGeometry *CreateTextPathGeometry(const std::wstring a_text, const float a_fontSize);
 
-// drawing methode
+// drawing method
 public:
-	void DrawUserText(const wchar_t *const ap_text, const DRect &ap_rect);
-	DRect DrawTextOutline(const wchar_t *const ap_text, const DPoint &a_startPos, const float a_textHeight = 0.0f);
+	void DrawUserText(const std::wstring &a_text, const DRect &a_rect);
+	DRect DrawTextOutline(const std::wstring &a_text, const DPoint &a_startPos, const float a_textHeight = 0.0f);
 };
-
-#endif //_DIRECT_2D_EX_H_

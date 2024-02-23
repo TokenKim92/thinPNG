@@ -139,25 +139,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\optionDialog.cpp" />
-    <ClCompile Include="src\resizeD2D.cpp" />
-    <ClCompile Include="src\thinPNG.cpp" />
-    <ClCompile Include="src\thinPNGDialog.cpp" />
-    <ClCompile Include="src\utility.cpp" />
+    <ClCompile Include="src\OptionDialog.cpp" />
+    <ClCompile Include="src\ResizeD2D.cpp" />
+    <ClCompile Include="src\ThinPNG.cpp" />
+    <ClCompile Include="src\ThinPNGDialog.cpp" />
+    <ClCompile Include="src\Utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ApplicationCore.h" />
     <ClInclude Include="include\ColorPalette.h" />
     <ClInclude Include="include\Direct2D.h" />
     <ClInclude Include="include\Direct2DEx.h" />
+    <ClInclude Include="include\Event.h" />
     <ClInclude Include="include\framework.h" />
-    <ClInclude Include="include\optionDialog.h" />
-    <ClInclude Include="include\resizeD2D.h" />
+    <ClInclude Include="include\OptionDialog.h" />
+    <ClInclude Include="include\ResizeD2D.h" />
     <ClInclude Include="include\Resource.h" />
     <ClInclude Include="include\targetver.h" />
-    <ClInclude Include="include\utility.h" />
+    <ClInclude Include="include\Utility.h" />
     <ClInclude Include="include\WindowDialog.h" />
-    <ClInclude Include="include\thinPNGDialog.h" />
+    <ClInclude Include="include\ThinPNGDialog.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="thinPNG.rc" />

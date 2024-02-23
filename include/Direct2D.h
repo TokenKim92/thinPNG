@@ -1,12 +1,21 @@
-#ifndef _DIRECT_2D_H_
-#define _DIRECT_2D_H_
+#pragma once
 
 #include "ApplicationCore.h"
 
-#define DPoint	D2D1_POINT_2F
-#define DRect	D2D1_RECT_F
-#define DColor	D2D1_COLOR_F
-#define DSize	D2D1_SIZE_F
+typedef D2D1_POINT_2F DPoint;
+typedef D2D1_RECT_F DRect;
+typedef	D2D1_COLOR_F DColor;
+typedef D2D1_SIZE_F DSize;
+
+__inline DColor ChangeRgbToColorF(const COLORREF &a_rgb)
+{
+	return {
+		static_cast<float>(GetRValue(a_rgb)) / 255.0f,
+		static_cast<float>(GetGValue(a_rgb)) / 255.0f,
+		static_cast<float>(GetBValue(a_rgb)) / 255.0f,
+		1.0f
+	};
+}
 
 typedef enum class COLOR_MODE
 {
@@ -18,7 +27,7 @@ class Direct2D
 {
 protected:
 	const HWND mh_window;
-	RECT *mp_viewRect;
+	RECT m_viewRect;
 
 	ID2D1RenderTarget *mp_renderTarget;				// instance to draw in window client area
 	ID2D1Brush *mp_brush;							// used as output brush for lines and strings
@@ -32,7 +41,7 @@ public:
 	Direct2D(const HWND ah_window, const RECT *const ap_viewRect = nullptr);
 	virtual ~Direct2D();
 
-	virtual int Create();
+	virtual bool Create();
 
 	void BeginDraw();
 	void EndDraw();
@@ -53,17 +62,17 @@ public:
 	void SetBrushColor(const DColor &a_color);
 	void SetBackgroundColor(const DColor &a_backgroundColor);
 	// returns the previous brush. must be released from the user
-	ID2D1Brush *SetBrush(ID2D1Brush *const ap_brush);
+	ID2D1Brush *const SetBrush(ID2D1Brush *const ap_brush);
 	// returns the previous stroke style. must be released from the user
 	ID2D1StrokeStyle *const SetStrokeStyle(ID2D1StrokeStyle *const ap_strokeStyle);
 	void SetStrokeWidth(const float a_strokeWidth);
 	void SetMatrixTransform(const D2D1_MATRIX_3X2_F &a_transform);
 
 protected:
-	virtual HRESULT CreateDeviceResources();
+	virtual bool CreateDeviceResources();
 	virtual void DestroyDeviceResources();
 
-	// drawing methode
+	// drawing method
 public:
 	void DrawLine(const DPoint &a_startPoint, const DPoint &a_endPoint);
 	void DrawRectangle(const DPoint &a_startPoint, const DPoint &a_endPoint);
@@ -82,5 +91,3 @@ public:
 	void FillEllipse(const DRect &a_rect);
 	void FillGeometry(ID2D1Geometry *const p_geometry);
 };
-
-#endif //_DIRECT_2D_H_

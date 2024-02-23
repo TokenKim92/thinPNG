@@ -1,10 +1,9 @@
-#ifndef _THIN_PNG_DIALOG_H_
-#define _THIN_PNG_DIALOG_H_
+#pragma once
 
 #include "WindowDialog.h"
 #include "optionDialog.h"
 
-class thinPNG : public WindowDialog
+class ThinPNGDialog : public WindowDialog
 {
 protected:
 	RECT m_viewRect;
@@ -24,10 +23,11 @@ protected:
 	bool m_hoverOnOptionButton;
 
 public:
-	thinPNG();
-	virtual ~thinPNG();
+	ThinPNGDialog();
+	virtual ~ThinPNGDialog() = default;
 
 protected:
+	virtual void OnAddEventListener() override;
 	virtual void OnInitDialog() override;
 	virtual void OnDestroy() override;
 	virtual void OnPaint() override;
@@ -35,13 +35,4 @@ protected:
 
 	void DrawField();
 	void DrawOptionButton();
-
-	// to handle the WM_MOUSEMOVE message that occurs when a window is destroyed
-	int MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_LBUTTONDOWN message that occurs when a window is destroyed
-	int MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_DROPFILES message that occurs when a window is destroyed
-	int DropFilesHandler(WPARAM a_wordParam, LPARAM a_longParam);
 };
-
-#endif //_THIN_PNG_DIALOG_H_

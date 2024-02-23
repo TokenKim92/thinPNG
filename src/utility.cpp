@@ -3,7 +3,7 @@
 #include <string>
 #include <cctype>    // std::tolower
 #include <algorithm> // std::equal
-#include "utility.h"
+#include "Utility.h"
 
 bool PointInRectF(const D2D1_RECT_F &ap_rect, const POINT &ap_pos)
 {

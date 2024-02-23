@@ -1,10 +1,4 @@
-#ifndef _COLOR_PALETTE_H_
-#define _COLOR_PALETTE_H_
-
-#define RGB_TO_COLORF(rgb)	{ static_cast<float>(GetRValue(rgb)) / 255.0f, \
-							  static_cast<float>(GetGValue(rgb)) / 255.0f, \
-							  static_cast<float>(GetBValue(rgb)) / 255.0f, \
-							  1.0f }
+#pragma once
 
 #define SLATE_50		(COLORREF)0xfcfaf8
 #define SLATE_100		(COLORREF)0xf9f5f1
@@ -269,5 +263,3 @@
 #define ROSE_800		(COLORREF)0x39129f
 #define ROSE_900		(COLORREF)0x371388
 #define ROSE_950		(COLORREF)0x19054c
-
-#endif //!_COLOR_PALETTE_H_

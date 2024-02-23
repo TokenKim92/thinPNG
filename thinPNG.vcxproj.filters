@@ -18,19 +18,19 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\thinPNG.cpp">
+    <ClCompile Include="src\ThinPNG.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\thinPNGDialog.cpp">
+    <ClCompile Include="src\ThinPNGDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\utility.cpp">
+    <ClCompile Include="src\Utility.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\resizeD2D.cpp">
+    <ClCompile Include="src\ResizeD2D.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\optionDialog.cpp">
+    <ClCompile Include="src\OptionDialog.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,7 +44,7 @@
     <ClInclude Include="include\targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\thinPNGDialog.h">
+    <ClInclude Include="include\ThinPNGDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ApplicationCore.h">
@@ -62,14 +62,17 @@
     <ClInclude Include="include\WindowDialog.h">
       <Filter>Header Files\base</Filter>
     </ClInclude>
-    <ClInclude Include="include\utility.h">
+    <ClInclude Include="include\Utility.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\resizeD2D.h">
+    <ClInclude Include="include\ResizeD2D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\optionDialog.h">
+    <ClInclude Include="include\OptionDialog.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Event.h">
+      <Filter>Header Files\base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

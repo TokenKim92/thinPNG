@@ -1,6 +1,6 @@
 #include "framework.h"
-#include "resizeD2D.h"
-#include "utility.h"
+#include "ResizeD2D.h"
+#include "Utility.h"
 #include <filesystem>
 #include <shcore.h>
 
@@ -8,11 +8,6 @@ extern ApplicationCore *gp_appCore;
 
 ResizeD2D::ResizeD2D(HWND ah_wnd, const RECT *const ap_viewRect)
 	:Direct2DEx(ah_wnd, ap_viewRect)
-{
-	
-}
-
-ResizeD2D::~ResizeD2D()
 {
 	
 }
@@ -30,21 +25,21 @@ IWICFormatConverter *ResizeD2D::ScaleImageToBitmap(const std::wstring &a_filePat
 {
     IWICImagingFactory *p_wicFactory = gp_appCore->GetWICFactory();
 
-    IWICBitmapDecoder *p_decorder;
-    if (S_OK != p_wicFactory->CreateDecoderFromFilename(a_filePath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &p_decorder)) {
+    IWICBitmapDecoder *p_decoder;
+    if (S_OK != p_wicFactory->CreateDecoderFromFilename(a_filePath.c_str(), nullptr, GENERIC_READ, WICDecodeMetadataCacheOnDemand, &p_decoder)) {
         return nullptr;
     }
 
     IWICBitmapFrameDecode *p_frameDecode;
-    if (S_OK != p_decorder->GetFrame(0, &p_frameDecode)) {
-        p_decorder->Release();
+    if (S_OK != p_decoder->GetFrame(0, &p_frameDecode)) {
+        p_decoder->Release();
         return nullptr;
     }
 
     IWICBitmapScaler *p_scaler;
     if (S_OK != p_wicFactory->CreateBitmapScaler(&p_scaler)) {
         p_frameDecode->Release();
-        p_decorder->Release();
+        p_decoder->Release();
         return nullptr;
     }
     
@@ -70,7 +65,7 @@ IWICFormatConverter *ResizeD2D::ScaleImageToBitmap(const std::wstring &a_filePat
     );
 
     p_frameDecode->Release();
-    p_decorder->Release();
+    p_decoder->Release();
     p_scaler->Release();
 
     return S_OK == result ? p_converter : nullptr;

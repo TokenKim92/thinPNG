@@ -1,5 +1,4 @@
-#ifndef _OPTION_DIALOG_H_
-#define _OPTION_DIALOG_H_
+#pragma once
 
 #include "WindowDialog.h"
 
@@ -54,30 +53,22 @@ protected:
 
 public:
 	OptionDialog(unsigned int a_size, const CONTROL_TYPE &a_selectedRadioType);
-	virtual ~OptionDialog();
+	virtual ~OptionDialog() = default;
 
 	unsigned int GetSizeValue();
 	CONTROL_TYPE GetRatioType();
 
 protected:
+	virtual void OnAddEventListener() override;
 	virtual void OnInitDialog() override;
 	virtual void OnDestroy() override;
 	virtual void OnPaint() override;
-
-	// to handle the WM_MOUSEMOVE message that occurs when a window is destroyed
-	int MouseMoveHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_LBUTTONDOWN message that occurs when a window is destroyed
-	int MouseLeftButtonDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_LBUTTONUP message that occurs when a window is destroyed
-	int MouseLeftButtonUpHandler(WPARAM a_wordParam, LPARAM a_longParam);
-	// to handle the WM_KEYDOWN message that occurs when a window is destroyed
-	int KeyDownHandler(WPARAM a_wordParam, LPARAM a_longParam);
 
 private:
 	void InitRects(); 
 	void InitColors();
 
-	void OnNumberKeyDown(const unsigned char a_pressedKey, const unsigned char a_offset);
+	void OnNumberKeyDown(const unsigned short a_pressedKey, const unsigned char a_offset);
 	void OnControlDown(const CONTROL_TYPE &a_buttonType);
 	void OnButtonControlUp(const CONTROL_TYPE &a_buttonType);
 	void OnRadioControlUp(const CONTROL_TYPE &a_buttonType);
@@ -88,5 +79,3 @@ private:
 	void DrawSaveButton();
 	void DrawCancelButton();
 };
-
-#endif //_OPTION_DIALOG_H_
